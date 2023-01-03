@@ -1,12 +1,12 @@
-# SASÂ® IML Packages
+# SAS® IML Packages
 
 ## Overview
 
 A *package* is a collection of SAS IML function modules that share a common purpose. Programmers can store the modules and use them in their SAS IML programs. 
 
-Packages in SAS ViyaÂ® are managed by using a repository on GitHub. You can clone the repository to obtain a copy of the functions. When you execute the source files, the functions are stored in a module library. You can then load the functions and use them in your programs.
+Packages in SAS Viya® are managed by using a repository on GitHub. You can clone the repository to obtain a copy of the functions. When you execute the source files, the functions are stored in a module library. You can then load the functions and use them in your programs.
 
-This method enables you to use libraries of function modules in the IML procedure and in the IML action. The same process also works for PROC IML in SASÂ® 9.4.
+This method enables you to use libraries of function modules in the IML procedure and in the IML action. The same process also works for PROC IML in SAS® 9.4.
 
 ## List of Packages
 
@@ -16,7 +16,7 @@ This method enables you to use libraries of function modules in the IML procedur
 ### Prerequisites
 
 These modules have been tested on the following software:
-* SAS/IMLÂ® in SAS 9.4 Maintenance version 7
+* SAS/IML® in SAS 9.4 Maintenance version 7
 * SAS IML in SAS Viya. This includes both the IML procedure and the iml action.
 
 ## Getting Started
