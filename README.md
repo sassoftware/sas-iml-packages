@@ -63,7 +63,7 @@ Each file ends with a STORE statement, which means that the functions are stored
 
 ```sas
 proc iml;
-LOAD MODULE=\_ALL\_;
+LOAD MODULE= _ALL_;
 /* use the functions here */
 quit;
 ```
