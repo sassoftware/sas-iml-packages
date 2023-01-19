@@ -9,16 +9,18 @@ SPDX-License-Identifier: Apache-2.0
    In SAS Viya, the macro is empty and does nothing.
    In SAS 9.4, the macro defines a function that emulates the PrintToLog call.
    The syntax is as follows:
+   call PrintToLog("This is a log message");
    call PrintToLog("This is a note", 0);
    call PrintToLog("This is a warning", 1);
    call PrintToLog("This is an error", 2);
 */
 %macro DefinePrintToLog;
 %if %sysevalf(&sysver = 9.4) %then %do;
-start PrintToLog(msg,errCode);
-   if errCode=0 then prefix = "NOTE: ";
+start PrintToLog(msg,errCode=-1);
+   if      errCode=0 then prefix = "NOTE: ";
    else if errCode=1 then prefix = "WARNING: ";
-   else prefix = "ERROR: ";
+   else if errCode=2 then prefix = "ERROR: ";
+   else prefix = "";
    stmt = '%put ' + prefix + msg + ';';
    call execute(stmt);
 finish;
