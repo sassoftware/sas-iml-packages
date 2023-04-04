@@ -34,7 +34,7 @@ store module=(PrintToLog);
 /******************************/
 
 /* plot the CDF for the ML object */
-start ML_PlotCDF(L, _p=);
+start ML_PlotCDF(L, _p=, flipAxes=0);
    if IsSkipped(_p) then 
       p = {0.0001 0.0005 0.001} || do(0.01, 0.99, 0.01) || {0.999 0.9995 0.9999};
    else do;
@@ -42,7 +42,10 @@ start ML_PlotCDF(L, _p=);
       call sort(p);
    end;
    x = ML_Quantile(L, p);
-   call series(x, p) grid={x y} label={'x' 'Cumulative Probability'};
+   if ^flipAxes then
+      call series(x, p) grid={x y} label={'x' 'Cumulative Probability'};
+   else
+      call series(p, x) grid={x y} label={'Cumulative Probability' 'Quantile'};
 finish;
 
 /* plot the PDF for the ML object */
@@ -59,7 +62,7 @@ start ML_PlotPDF(L, _p=);
 finish;
 
 /* plot the ECDF for data and overlay the CDF for the ML model */
-start ML_PlotECDF(L, _p=);
+start ML_PlotECDF(L, _p=, flipAxes=0);
    if IsSkipped(_p) then 
       p = {0.0001 0.0005 0.001} || do(0.01, 0.99, 0.01) || {0.999 0.9995 0.9999};
    else do;
@@ -71,20 +74,51 @@ start ML_PlotECDF(L, _p=);
    ECDF = L$'cdf';
    create Temp var {"x" "ECDF" "q" "p"}; append; close;
    order=L$'order';
+   if ^flipAxes then do;  /* plot ECDF and model */
    submit order;
-   proc sgplot data=Temp;
-      scatter x=x y=ECDF / markerattrs=(color=gray symbol=Circle) legendlabel="Data";
-      series x=q y=p / legendlabel="Metalog_&order";
-      yaxis grid label="Cumulative Probability";
-      xaxis grid label="x";
-      keylegend / location=inside across=1 opaque;
-   run;
+      proc sgplot data=Temp;
+	 scatter x=x y=ECDF / markerattrs=(color=gray symbol=Circle) legendlabel="Data";
+	 series x=q y=p / legendlabel="Metalog_&order";
+	 yaxis grid label="Cumulative Probability";
+	 xaxis grid label="x";
+	 keylegend / location=inside across=1 opaque;
+      run;
    endsubmit;
+   end;
+   else do;               /* plot empirical quantiles and model */
+   submit order;
+      proc sgplot data=Temp;
+	 scatter y=x x=ECDF / markerattrs=(color=gray symbol=Circle) legendlabel="Data";
+	 series y=q x=p / legendlabel="Metalog_&order";
+	 xaxis grid label="Cumulative Probability";
+	 yaxis grid label="Quantile";
+	 keylegend / location=inside across=1 opaque;
+      run;
+   endsubmit;
+   end;
+finish;
+
+/* plot the quantile function for the ML object */
+start ML_PlotQuantile(L, _p=);
+   if IsSkipped(_p) then 
+      call ML_PlotCDF(L, , 1);
+   else 
+      call ML_PlotCDF(L, _p, 1);
+finish;
+
+/* plot the empirical quantiles for data and overlay the model's quantile function */
+start ML_PlotEQuantile(L, _p=);
+   if IsSkipped(_p) then 
+      call ML_PlotECDF(L, , 1);
+   else 
+      call ML_PlotECDF(L, _p, 1);
 finish;
 
 store module=(
 ML_PlotCDF
 ML_PlotPDF
 ML_PlotECDF
+ML_PlotQuantile
+ML_PlotEQuantile
 );
  

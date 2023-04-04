@@ -130,10 +130,11 @@ finish;
 /* Print a summary of the metalog object */
 start ML_Summary(L);
    if ^ML_ValidateObject(L) then return;
+   isFeas = ML_IsFeasible(L);     /* update L$isFeasible in case coefs change */
    Summary = strip(char(L$'order')) //
              L$'boundType'          //
              ML_BoundString(L)      //
-             char(L$'isFeasible',1);
+             char(isFeas,1);
    Parameter = T('a1':('a'+strip(char(nrow(L$'a')))));
    Estimate = L$'a';
    print Summary[r={'Order' 'Type' 'Bounds' 'Is Feasible'} L="Model Summary"];
@@ -203,6 +204,7 @@ finish;
 start ML_IsFeasible(L);
    if type(L)^='L' then return(.);
    if ^ML_ValidateObject(L) then return(.);
+   L$'isFeasible' = Metalog_IsFeasible(L$'a'); /* update */
    return( L$'isFeasible' );
 finish;
 
@@ -527,7 +529,17 @@ start Metalog_IsFeasible(_a) global(_debug);
             return( a3a2 <= 2.0 );
       end;
    end;
-   /* general case. No formula. Evaluate PDF and test if all PDF > 0 */
+   /* evaluate PDF and test if all PDF > 0 */
+   return( Metalog_IsFeasiblePDF(a) );
+finish;
+
+/* Check the parameters for feasibility by evaluating the 
+   PDF on a fine grid and testing whether PDF >= 0 on the grid.
+*/
+start Metalog_IsFeasiblePDF(_a) global(_debug);
+   if type(_debug)='N' then if _debug>0 then print "In Metalog_IsFeasiblePDF";
+   a = colvec(_a);
+   /* General case. No formula. Evaluate PDF and test if all PDF > 0 */
    dt = 0.001;
    p = 0.0001 // T( do(dt, 1-dt, dt) ) // 0.9999;
    pdf = Metalog_PDF(p, a, 0);   /* do not check feasibility in routine */
@@ -1152,6 +1164,7 @@ Metalog_Order
 Metalog_BoundType
 Metalog_Design
 Metalog_IsFeasible
+Metalog_IsFeasiblePDF
 Metalog_ECDF
 Metalog_SL_ECDF
 Metalog_SU_ECDF
