@@ -10,14 +10,15 @@ This method enables you to use libraries of function modules in the IML procedur
 
 ## List of Packages
 
-* The **Metalog** package supports using the metalog system of distributions.
+* The **Compgeom** package is supported only in SAS Viya. The package shows how to use the CONVEXHULL, DELAUNAY, and VORONOI subroutines (released in Viya 2024.10) to solve problems in computational geometry. The package contains visualization subroutines that you can run in PROC IML. The routines visualize two-dimensional convex hulls, Delaunay triangulations, and Voronoi diagrams.
+* The **Metalog** package is supported for SAS 9.4 and for SAS Viya. The package supports using the metalog system of distributions.
 
 
 ### Prerequisites
 
-These modules have been tested on the following software:
-* SAS/IML® in SAS 9.4 Maintenance version 7
-* SAS IML in SAS Viya. This includes both the IML procedure and the iml action.
+* The graphical subroutines must be run from PROC IML.
+* The Compgeom package requires SAS Viya 2024.10.
+* The Metalog package works in every release of SAS Viya. It also works in SAS/IML® in SAS 9.4 Maintenance 7.
 
 ## Getting Started
 
@@ -53,8 +54,17 @@ You need to clone the repository only one time. Whenever you want to use a packa
 
 ```sas
 proc iml;
-%include "&repoPath./Metalog/ML_proc.sas";
 %include "&repoPath./Metalog/ML_define.sas";
+%include "&repoPath./Metalog/ML_proc.sas";
+/* use the functions here */
+quit;
+```
+If you want to use the **Compgeom** package, use the following statements:
+
+```sas
+proc iml;
+%include "&repoPath./Compgeom/CG_define.sas";
+%include "&repoPath./Compgeom/CG_proc.sas";
 /* use the functions here */
 quit;
 ```
@@ -68,7 +78,7 @@ LOAD MODULE= _ALL_;
 quit;
 ```
 
-See the individual packages for details.
+See the individual packages for documentation and examples of usage.
 
 ## Contributing
 
