@@ -288,7 +288,7 @@ start Compgeom_DrawVoronoiNoCells(sites, BBox=, V=, VCells=, CHsites=);
    if isSkipped(V) then 
       call voronoi(V, VCells, sites);
    if isSkipped(CHsites) then 
-      CHsites = convexhull(sites);
+      call convexhull(CHsites, volume_area, sites) ;
 %END;
    Sp = sites || T(1:nrow(sites));
    create _Sites from Sp[c={'sx' 'sy' 'sID'}]; append from Sp; close;
@@ -360,7 +360,7 @@ start CG_DrawVoronoi(sites, BBox=, V=, VCells=, CHsites=, DEBUG=0);
    if isSkipped(V) then 
       call voronoi(V, VCells, sites);
    if isSkipped(CHsites) then 
-      CHsites = convexhull(sites);
+      call convexhull(CHsites, volume_area, sites) ;
 %END;
    Sp = sites || T(1:nrow(sites));
    if DEBUG then 
