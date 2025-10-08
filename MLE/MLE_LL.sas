@@ -94,6 +94,42 @@ start MLE_LL_and_Deriv(f, g, H, distname, param);
    call nlpfdd(f, g, H, func_name, param);
 finish;
 
+/* Return PDFs of the various distributions evaluated on a uniform grid of X values:
+   INPUT:
+   DistNames : a (k x 1) vector of distribution keyword names (eg, 'Normal')
+   params    : a (k x 3) matrix of parameters, one row for each distribution
+   x         : an (N x 1) vector of values in the support of the distribution. 
+               Each PDF is evaluated at the points in x, which is usually on a regular grid.
+   OUTPUT:
+   Labl: A vector of groups of the form DIST(parm1,parm2)  (eg, 'Normal(1.23,4.56)')
+   P   : An (m x k) matrix of PDFs. The i_th column is the PDF at x for the i_th distribution
+*/
+start MLE_PDF(Labl, P, DistNames, params, x);
+   Format = "BEST6.";
+   k = nrow(DistNames);
+   N = nrow(x);
+   P = j(N,k,.);
+   Labl = j(k,1,BlankStr(32));
+   do i = 1 to k;
+      name = lik_dist_name(DistNames[i]);
+      parms = params[i,];
+      f = putn(parms,Format);
+      nParms = ncol(loc(parms^=.));
+      if nParms=1 then do;
+         labl[i] = cats(name,'(',f[1],')');
+         P[,i] = PDF(name, x, parms[1]);
+      end;
+      else if nParms=2 then do;
+         labl[i] = cats(name,'(',f[1],',',f[2],')');
+         P[,i] = PDF(name, x, parms[1], parms[2]);
+      end;
+      else if nParms=3 then do;
+         labl[i] = cats(name,'(',f[1],',',f[2],',',f[3],')');
+         P[,i] = PDF(name, x, parms[1], parms[2], parms[3]);
+      end;
+  end;
+finish;
+
 store module=(
       lik_LL_Beta
       lik_LL_Expo
@@ -105,4 +141,5 @@ store module=(
       lik_LL_Weib2
       MLE_LL
       MLE_LL_and_Deriv
+      MLE_PDF
 );

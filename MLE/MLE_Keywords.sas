@@ -18,43 +18,47 @@ finish;
 
 /***************************************************/
 
-/* By default, return a unique KEYWORD for any valid 
-   distribution name. If the second arg is 0, then 
-   return the SUFFIX used by the functions in the MLE library. 
+/* By default, return a unique KEYWORD for any valid distribution name. 
+   KEYWORD VALUE:
+   1  :  Return the 4-character KEYWORD used in the SAS procedures.
+   2  :  Return the SUFFIX used by the functions in the MLE library. 
+   3  :  Return the string used by the PDF and CDF functions in SAS
    Return ' ' if the name is not valid. */
 start lik_dist_keyword(distname, keyword=1);
    tbl = {
-   /* valid inputs | 4-char keyword | standard suffix */
-      'Beta'         'BETA'           'Beta',
-      'Exponential'  'EXPO'           'Expo', 
-      'Exp'          'EXPO'           'Expo',
-      'Expo'         'EXPO'           'Expo',
-      'Gamma'        'GAMM'           'Gamma',
-      'Gumbel'       'GUMB'           'Gumbel',
-      'IGauss'       'IGAU'           'IGauss',
-      'InvGauss'     'IGAU'           'IGauss',
-      'Wald'         'IGAU'           'IGauss',
-      'Lognormal'    'LN2 '           'LN2',
-      'LN'           'LN2 '           'LN2',
-      'LN2'          'LN2 '           'LN2',
-      'LN3'          'LN3 '           'LN3',
-      'Normal'       'NORM'           'Normal',
-      'Weibull'      'WEI2'           'Weib2',
-      'Weib2'        'WEI2'           'Weib2',
-      'Weib3'        'WEI3'           'Weib3'
+   /* valid inputs | 4-char keywd | std suffix | PDF Name */
+      'Beta'         'BETA'         'Beta'      'Beta',
+      'Exponential'  'EXPO'         'Expo'      'Expo', 
+      'Exp'          'EXPO'         'Expo'      'Expo',
+      'Expo'         'EXPO'         'Expo'      'Expo',
+      'Gamma'        'GAMM'         'Gamma'     'Gamma',
+      'Gumbel'       'GUMB'         'Gumbel'    'Gumbel',
+      'IGauss'       'IGAU'         'IGauss'    'IGauss',
+      'InvGauss'     'IGAU'         'IGauss'    'IGauss',
+      'Wald'         'IGAU'         'IGauss'    'IGauss',
+      'Lognormal'    'LN2 '         'LN2'       'Lognormal',
+      'LN'           'LN2 '         'LN2'       'Lognormal',
+      'LN2'          'LN2 '         'LN2'       'Lognormal',
+      'LN3'          'LN3 '         'LN3'       'Lognormal',
+      'Normal'       'NORM'         'Normal'    'Normal',
+      'Weibull'      'WEI2'         'Weib2'     'Weibull',
+      'Weib2'        'WEI2'         'Weib2'     'Weibull',
+      'Weib3'        'WEI3'         'Weib3'     'Weibull'
    };
    idx = loc( upcase(distname) = upcase(tbl[,1]) );
    if ncol(idx)=0 then   /* not a built-in distribution */
       return( ' ' );
-   if keyword then 
-      return( kstrip(tbl[idx, 2]) );
+   if keyword=2 | keyword=3 then 
+      return( kstrip(tbl[idx, keyword+1]) );
    else 
-      return( kstrip(tbl[idx, 3]) );
+      return( kstrip(tbl[idx, 2]) );
 finish;
 
-
 start lik_dist_suffix(distname);
-   return lik_dist_keyword(distname, 0);
+   return lik_dist_keyword(distname, 2);
+finish;
+start lik_dist_name(distname);
+   return lik_dist_keyword(distname, 3);
 finish;
 
 /* The functions in the MLE library follow a naming convention:
@@ -103,10 +107,11 @@ start lik_dist_parmnames(distName);
 finish;
 
 store module=(
-      MLE_Init
-      MLE_End
-      lik_dist_keyword
-      lik_dist_suffix
-      lik_func_name
-      lik_dist_parmnames
+   MLE_Init
+   MLE_End
+   lik_dist_keyword
+   lik_dist_suffix
+   lik_dist_name
+   lik_func_name
+   lik_dist_parmnames
 );

@@ -10,7 +10,8 @@
 /*
 options dlcreatedir;
 %let repoPath = %sysfunc(getoption(WORK))/sas-iml-packages;  
- 
+%let MLE_path = &repoPath/MLE; 
+
 data _null_;
 if fileexist("&repoPath.") then 
    put 'Repository already exists; skipping the clone operation'; 
@@ -21,19 +22,9 @@ end;
 run;
 */
 
-%let DEV_DIR = C:\Users\frwick\OneDrive - SAS\Documents\My SAS Files\MLE_dev;
 /* Use %INCLUDE to read source code and STORE functions to current storage library */
 proc iml;
-%include "&repoPath./MLE/MLE_define.sas";  /* one file with all modules */
-/* during development, you might want to use several smaller files:
-%include "&DEV_DIR/MLE_Util.sas";  
-%include "&DEV_DIR/MLE_Keywords.sas";  
-%include "&DEV_DIR/MLE_LL.sas";  
-%include "&DEV_DIR/MLE_MoM.sas";  
-%include "&repoPath./MLE/MLE_Fit.sas";  
-%include "&repoPath./MLE/MLE_Summary.sas";  
-*%include "&repoPath./MLE/MLE_proc.sas";   
-*/
+%include "&MLE_path/MLE_define.sas";  /* one file with all modules */
 quit;
 
 
@@ -60,8 +51,12 @@ L_gamma = MLE_Fit("Gamma", Systolic);
 
 run MLE_Summary(L_gamma);     /* print basic results */
 run MLE_Summary(L_gamma, 2);  /* print all results */
-run MLE_Plot(L_gamma);        /* overlay the curve on a histogram */
 
+title "Plot from low-level routine";
+run mle_Plot_Overlay(Systolic, "Gamma", gamma_est);
+
+title "Plot from high-level routine";
+run MLE_Plot(L_gamma);        /* overlay the curve on a histogram */
 
 /* For low-level routines, we can call low-level routines:
    est_MoM = lik_MoM_DistName(Y)

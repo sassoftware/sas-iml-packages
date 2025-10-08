@@ -1,5 +1,5 @@
 proc iml;
-%include "MLE_util.sas";
+%include "&MLE_path./MLE_util.sas";
 QUIT;
 
 /* test calls to the top-level subroutine */

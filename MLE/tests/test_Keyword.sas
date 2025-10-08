@@ -1,6 +1,6 @@
 proc iml;
-%include "MLE_util.sas";
-%include "MLE_keyword.sas";
+%include "&MLE_path.\MLE_util.sas";
+%include "&MLE_path.\MLE_keywords.sas";
 QUIT;
 
 /* tests */
@@ -12,7 +12,7 @@ y = {1, ., 2, ., ., 3, .};
 run MLE_Init(y);
 if ^all(gMLE_y = {1,2,3}) then print "gMLE_y is wrong";
 
-run MLE_Init({. . . });
+run MLE_Init({. . . });  /* ERROR */
 run MLE_End();
 if ^(ncol(gMLE_y)=0) then print "gMLE_y is not empty";
 
@@ -40,12 +40,13 @@ inputs = {
 }`;
 
 /* get keywords and suffixes */
-results = J(nrow(inputs), 3, BlankStr(15));
-mattrib results[c={'Dist' 'Keyword' 'Suffix'}];
+results = J(nrow(inputs), 4, BlankStr(15));
+mattrib results[c={'Dist' 'Keyword' 'Suffix' 'Name'}];
 do i = 1 to nrow(inputs);
    results[i,1] = inputs[i];
    results[i,2] = lik_dist_keyword(inputs[i]);
-   results[i,3] = lik_dist_suffix (inputs[i]);
+   results[i,3] = lik_dist_suffix(inputs[i]);
+   results[i,4] = lik_dist_name(inputs[i]);
 end;
 print results;
 

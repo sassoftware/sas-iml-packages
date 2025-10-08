@@ -52,7 +52,9 @@ store module=(
       PrintToLog
       );
 %end;
-%mend;
+%mend DefineSAS9UtilFuncs;
+
+%DefineSAS9UtilFuncs;
 
 /* Indirect calling of a function that has 1 arg. In SAS 9
    use CALL EXECUTE. In Viya, use FUNCEVAL.
@@ -83,6 +85,64 @@ store module=(
    else 
       call PrintToLog('Incorrect call to %EVALFUNC1 macro', 1);
 %end;
-%mend;
+%mend EVALFUNC1; 
 
-%DefineSAS9UtilFuncs;
+/* Syntax:
+     %EmulateHistogramSetup(dsIn=DATASET, varIn=VARIABLE)
+   where 
+     DATASET = name of a SAS data set 
+     VARIABLE= name of variable in data set whose distribution you want to model
+
+   The macro does the following:
+      1. Writes a data set called _HistBins that contains variables 
+         _MIDPT_ : Centers of histogram bins
+         _COUNT_ : Frequency count in each bin
+         _OBSPCT_: Percentage of observations in each bin
+         _ZERO_  : The constant value 0, which is the lower edge of the high-low plot
+      2. Creates the following macro variables:
+         &_BINSTART : the value of the center of the first bin
+         &_BINEND   : the value of the center of the last bin
+         &_BINWIDTH : the width of the bins
+         &_VARNAME  : the name of the variable whose distribution is modeled
+   You can emulate a histogram by using the HIGHLOW stmt in PROC SGPLOT:
+   proc sgplot data=_HistBins;
+      highlow x=_midpt_ low=_zero_ high=_obspct_ / type=bar barwidth=1;
+      yaxis min=0 offsetmin=0 grid;
+      xaxis values=(&_binStart to &_binEnd by &_binWidth) valueshint;
+   run;
+*/
+%macro EmulateHistogramSetup(dsIn=, varIn=);
+%global _binStart _binEnd _binWidth _NObs;
+proc univariate data=&dsIn noprint;
+   var &varIn;
+   histogram &varIn / outhist=_HistBins(rename=(_OBSPCT_=_PCT_)) noplot;
+   output out=_HistOut n=_NOBS_;
+run;
+data _null_;
+   set _HistBins end=EOF;
+   if _N_=1 then 
+      call symputx("_binStart", _MIDPT_);
+   h = dif(_MIDPT_);
+   if EOF then do;
+      call symputx("_binEnd", _MIDPT_);
+      call symputx("_binWidth", h);
+      call symputx("_varName", &varIn);
+   end;
+run;
+data _null_;
+   set _HistOut;
+   call symputx("_NOBS", _NOBS_);
+run;
+
+data _HistBins;
+set _HistBins;
+_ZERO_ = 0;        /* add baseline for histogram */
+label _MIDPT_ = &varIn
+      _PCT_   = "Percent"
+      _COUNT_ = "Count";
+run;
+/*
+%PUT The following macro variables have been defined:;
+%PUT &=_binStart &=_binEnd &=_binWidth &=_NObs;
+*/
+%mend EmulateHistogramSetup;

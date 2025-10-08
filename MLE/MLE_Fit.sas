@@ -43,21 +43,20 @@ start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
    return( est );
 finish;
 
-
-
-start MLE_Fit(DistName, y,  param0=, OptimMethod=, Bounds=);
+/* Main function that returns a fit object */
+start MLE_Fit(DistName, y,  param0=, OptimMethod=, Bounds=)  global(gMLE_y);
    /* need to check how these optional parameters are passed into MLE() */
    est = MLE(DistName, y, param0, OptimMethod, Bounds); 
    names = {"Dist", "y", "ParmNames", "Estimate", "LL", 
             "Grad", "Hessian", "StdErr", "Crit", "CritNames"};
    FitObj = ListCreate(names);  /* named list */
-   FitObj$"Dist" = lik_dist_keyword(DistName, 0);
-   FitObj$"y" = gMLE_y;
+   FitObj$"Dist" = lik_dist_name(DistName);
+   FitObj$"y"    = gMLE_y;
    FitObj$"ParmNames" = lik_dist_parmnames(DistName);
-   FitObj$"Estimate" = est;
+   FitObj$"Estimate"  = est;
    run MLE_LL_and_Deriv(LL, Grad, Hess, DistName, est);
-   FitObj$"LL" = LL;
-   FitObj$"Grad" = Grad;
+   FitObj$"LL"      = LL;
+   FitObj$"Grad"    = Grad;
    FitObj$"Hessian" = Hess;
    /* TO DO: compute StdErr and Crit */
    /*
@@ -65,9 +64,9 @@ start MLE_Fit(DistName, y,  param0=, OptimMethod=, Bounds=);
    FitObj$"Crit" = Crit;
    FitObj$"CritNames" = CritNames;
    */
-   FitObj$"StdErr" = j(nrow(est), 1, .);
+   FitObj$"StdErr"    = j(nrow(est), 1, .);
    FitObj$"CritNames" = {'-2*LL', 'AIC', 'AICC', 'BIC'};
-   FitObj$"Crit" = -2*LL // . // . // .;
+   FitObj$"Crit"      = -2*LL // . // . // .;
    return( FitObj );
 finish;
 

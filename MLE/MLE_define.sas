@@ -1,9 +1,13 @@
 /* Master %INCLUDE for all module definitions. */
+%let MLE_path = u:\gitpp\DEV\sas-iml-packages\MLE;
 
-%include "MLE_Fit.sas";
-%include "MLE_Keywords.sas";
-%include "MLE_LL.sas";
-%include "MLE_MoM.sas";
-%include "MLE_Plot.sas";
-%include "MLE_Summary.sas";
-%include "MLE_Util.sas";
+proc iml;
+%include "&MLE_path/MLE_Util.sas";
+%include "&MLE_path/MLE_Fit.sas";
+%include "&MLE_path/MLE_Keywords.sas";
+%include "&MLE_path/MLE_LL.sas";
+%include "&MLE_path/MLE_MoM.sas";
+%include "&MLE_path/MLE_Plot.sas";
+%include "&MLE_path/MLE_Summary.sas";
+quit;
+
