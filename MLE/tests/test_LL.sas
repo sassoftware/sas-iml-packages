@@ -1,7 +1,7 @@
 proc iml;
-%include "MLE_Util.sas";
-%include "MLE_Keyword.sas";
-%include "MLE_MoM.sas";
+%include "&MLE_path./MLE_Util.sas";
+%include "&MLE_path./MLE_Keywords.sas";
+%include "&MLE_path./MLE_MoM.sas";
 QUIT;
 
 
