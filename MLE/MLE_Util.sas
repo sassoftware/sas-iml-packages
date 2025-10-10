@@ -47,6 +47,7 @@ start PrintToLog(msg,errCode=-1);
    stmt = '%put ' + prefix + msg + ';';
    call execute(stmt);
 finish;
+
 store module=(
       CompleteCases
       PrintToLog
