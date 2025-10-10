@@ -1,7 +1,5 @@
 proc iml;
-%include "&MLE_path./MLE_Util.sas";
-%include "&MLE_path./MLE_Keywords.sas";
-%include "&MLE_path./MLE_MoM.sas";
+%include "&MLE_path./MLE_define.sas";
 QUIT;
 
 
@@ -23,7 +21,9 @@ Y = randfun(N, "Beta", alpha, beta);
 est = MLE_MOM("Beta", Y);
 est2 = lik_MOM_Beta(Y);
 diff_est = est - est2;
-print Param[r={'alpha' 'beta'}] est est2 diff_est;
+res_beta = Param || est || est2 || diff_est;
+cnames = {'Param' 'Estimate' 'Est2' 'diff'};
+print res_beta[r={'alpha' 'beta'} c = cnames];
 
 /* Y ~ Expo(scale) */
 N = 1000;
@@ -33,7 +33,11 @@ Y = randfun(N, "Expo", scale);
 est = MLE_MOM("Exp", Y);
 est2 = lik_MOM_Expo(Y);
 diff_est = est - est2;
-print Param[r={'scale'}] est est2 diff_est;
+res_expo = Param || est || est2 || diff_est;
+cnames = {'Param' 'Estimate' 'Est2' 'diff'};
+print res_expo[r={'scale'} c=cnames];
+
+PRINT "HERE: CONTINUE MODIFYING THE OUTPUT TO LOOK LIKE PARAMETERESTIMATES";
 
 /* Y ~ Gamma(alpha, lambda) */
 N = 1000;

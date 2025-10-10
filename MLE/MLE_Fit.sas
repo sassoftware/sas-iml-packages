@@ -191,7 +191,7 @@ start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
    ll_func = lik_func_name(DistName, "LL");
 
    /* Use the CALLOPTIM macro to handle optimization method calls based on SAS version */
-   CALL MLEOPTIM(rc, soln, OptimMethodSetting, ll_func, initial_point, BoundsMatrix);
+   CALL mle_OPTIM(rc, soln, OptimMethodSetting, ll_func, initial_point, BoundsMatrix);
 
    run MLE_End();
    
