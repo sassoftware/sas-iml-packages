@@ -8,7 +8,7 @@ This project is a set of helper routines for fitting univariate distributions to
 The functions are written in the SAS IML language. The functions serve several purposes:
 - Show programmers how to use the optimization routines in SAS IML to perform MLE
 - Demonstrate best practices for MLE
-- Compare the older NLPNRA and NLPQN optimization routines with the newer NLPSOLVE routine. The NLPSOLVE routine is onlyu available in SAS Viya.
+- Compare the older NLPNRA and NLPQN optimization routines with the newer NLPSOLVE routine. The NLPSOLVE routine is only available in SAS Viya.
 - Provide visualization routines for MLE
 - Provide standard errors for parameter estimates
 
