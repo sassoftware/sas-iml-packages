@@ -92,7 +92,7 @@ finish mle_ValidateInputs;
 
 
 /* USAGE:
-   CALL ll_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
+   CALL mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
    
    WHERE:
    rc = return code from optimization
@@ -105,7 +105,7 @@ finish mle_ValidateInputs;
    Use %IF macro logic to call optimization methods based on SAS version and method name.
    This function handles the differences between SAS 9.4 and SAS Viya optimization routines.
 */
-start ll_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
+start mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
    rc = -1;
    soln = j(nrow(initial_point), 1, .);
    errmsg = "ERROR: Unknown optimization method: " + kstrip(method) + ". ";
@@ -141,63 +141,6 @@ start ll_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
       call NLPSOLVE(rc, soln, ll_func, rowvec_initial_point) OPT=opt L=LowerBound U=UpperBound;
    end;
    %end;
-finish ll_OPTIM;
-
-
-/* call optimization methods based on SAS version and method name.
-   This macro handles the differences between SAS 9.4 and SAS Viya optimization routines.
-   
-   USAGE:
-   CALL mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
-   
-   WHERE:
-   rc = return code from optimization
-   soln = solution vector (parameter estimates)
-   method = optimization method name ("NLPQN", "NLPNRA", "ACTIVE", "IP", "IPDIRECT")
-   ll_func = log-likelihood function name
-   initial_point = initial parameter guess
-   bounds_matrix = 2-column matrix with lower and upper bounds
-*/
-start mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
-%if %sysevalf(&sysver = 9.4) %then %do;
-   /* SAS 9.4: Only NLPQN and NLPNRA are available */
-   if upcase(method) = "NLPQN" then do;
-      call NLPQN(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
-   end;
-   else if upcase(method) = "NLPNRA" then do;
-      call NLPNRA(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
-   end;
-   else do;
-      call PrintToLog("ERROR: Optimization method " + kstrip(method) + " is not available in SAS 9.4. Use NLPQN or NLPNRA.", 2);
-      rc = -1;
-      soln = j(nrow(initial_point), 1, .);
-   end;
-%end;
-%else %do;
-   /* SAS Viya: NLPQN, NLPNRA, and NLPSOLVE methods are available */
-   if upcase(method) = "NLPQN" then do;
-      call NLPQN(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
-   end;
-   else if upcase(method) = "NLPNRA" then do;
-      call NLPNRA(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
-   end;
-   else if upcase(method) = "ACTIVE" | upcase(method) = "IP" | upcase(method) = "IPDIRECT" then do;
-      LowerBound = bounds_matrix[1,];
-      UpperBound = bounds_matrix[2,];
-      rowvec_initial_point = rowvec(initial_point);
-      if upcase(method) = "ACTIVE" then 
-         call NLPSOLVE(rc, soln, ll_func, rowvec_initial_point) OPT={-1, 0, 0} L=LowerBound U=UpperBound;
-      else if upcase(method) = "IP" then 
-         call NLPSOLVE(rc, soln, ll_func, rowvec_initial_point) OPT={-1, 0, 1} L=LowerBound U=UpperBound;
-      else if upcase(method) = "IPDIRECT" then 
-         call NLPSOLVE(rc, soln, ll_func, rowvec_initial_point) OPT={-1, 0, 2} L=LowerBound U=UpperBound;
-   end;
-   else do;
-      call PrintToLog("ERROR: Unknown optimization method: " + kstrip(method) + ". Valid methods are: NLPQN, NLPNRA, ACTIVE, IP, IPDIRECT.", 2);
-      rc = -1;
-      soln = j(nrow(initial_point), 1, .);
-   end;
-%end;
 finish mle_OPTIM;
 
 /* Compute the MLE estimates that fit DistName model to the Y data:
