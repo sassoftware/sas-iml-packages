@@ -91,6 +91,59 @@ start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_pr
 finish mle_ValidateInputs;
 
 
+/* USAGE:
+   CALL ll_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
+   
+   WHERE:
+   rc = return code from optimization
+   soln = solution vector (parameter estimates)
+   method = optimization method name ("NLPQN", "NLPNRA", "ACTIVE", "IP", "IPDIRECT")
+   ll_func = log-likelihood function name
+   initial_point = initial parameter guess
+   bounds_matrix = 2-column matrix with lower and upper bounds
+
+   Use %IF macro logic to call optimization methods based on SAS version and method name.
+   This function handles the differences between SAS 9.4 and SAS Viya optimization routines.
+*/
+start ll_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
+   rc = -1;
+   soln = j(nrow(initial_point), 1, .);
+   errmsg = "ERROR: Unknown optimization method: " + kstrip(method) + ". ";
+   %if &sysver. = 9.4 %then %do;
+      errmsg = errmsg + "Valid methods in SAS 9.4 are NLPQN and NLPNRA.";
+      validMethods = {"NLPQN", "NLPNRA"};
+   %end;
+   %else %do;
+      errmsg = errmsg + "Valid methods in SAS Viya are NLPQN, NLPQN, NLPNRA, ACTIVE, IP, and IPDIRECT.";
+      validMethods = {"NLPQN", "NLPNRA", "ACTIVE", "IP", "IPDIRECT"};
+   %end;
+   if type(method)^='C' then do;
+      call PrintToLog(errmsg, 2);
+      return;
+   end;
+   if ^element(upcase(method), validMethods) then do;
+      call PrintToLog(errmsg, 2);
+      return;
+   end;
+   
+   if upcase(method) = "NLPQN" then 
+      call NLPQN(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
+   else if upcase(method) = "NLPNRA" then 
+      call NLPNRA(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
+   %if &sysver. ne 9.4 %then %do;
+   else do;
+      LowerBound = bounds_matrix[1,];
+      UpperBound = bounds_matrix[2,];
+      rowvec_initial_point = rowvec(initial_point);
+      if      upcase(method) = "ACTIVE" then   opt={-1, 0, 0};
+      else if upcase(method) = "IP"     then   opt={-1, 0, 1};
+      else if upcase(method) = "IPDIRECT" then opt={-1, 0, 2};
+      call NLPSOLVE(rc, soln, ll_func, rowvec_initial_point) OPT=opt L=LowerBound U=UpperBound;
+   end;
+   %end;
+finish ll_OPTIM;
+
+
 /* call optimization methods based on SAS version and method name.
    This macro handles the differences between SAS 9.4 and SAS Viya optimization routines.
    
