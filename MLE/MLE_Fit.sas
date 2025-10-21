@@ -162,7 +162,6 @@ finish mle_OPTIM;
 
    The function returns the MLE estimate for the distribution, given the data.
 */
-
 start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
   /* Initialize the data */
    run MLE_Init(y);
@@ -187,11 +186,10 @@ start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
    ll_func = lik_func_name(DistName, "LL");
 
    /* Use the CALLOPTIM macro to handle optimization method calls based on SAS version */
-   CALL mle_OPTIM(rc, soln, OptimMethodSetting, ll_func, initial_point, BoundsMatrix);
+   call mle_OPTIM(rc, soln, OptimMethodSetting, ll_func, initial_point, BoundsMatrix);
 
-   run MLE_End();
-   
-   return( soln );
+  /* Ensure column-vector result for consistency across SAS versions */
+   return( colvec(soln) );
 finish MLE;
 
 
@@ -215,7 +213,7 @@ start MLE_Fit(DistName, y,  param0=, OptimMethod=, Bounds=)  global(gMLE_y);
    OptimMethodSetting = validated$"OptimMethodSetting";
 
    /* Call MLE with validated parameters - note: we pass the nx2 Bounds format, not the 2xn BoundsMatrix */
-   est = MLE(DistName, y, initial_point, OptimMethodSetting, T(BoundsMatrix)); 
+   est = MLE(DistName, y, initial_point, OptimMethodSetting, T(BoundsMatrix)); /* defines gMLE_y */
 
    names = {"Dist", "y", "ParmNames", "Estimate", "LL", 
             "Grad", "Hessian", "StdErr", "Crit", "CritNames"};
