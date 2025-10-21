@@ -61,20 +61,30 @@ start lik_dist_name(distname);
    return lik_dist_keyword(distname, 3);
 finish;
 
-/* The functions in the MLE library follow a naming convention:
-   MLE_LL_Dist: the log-likelihood function for 'Dist'
+/* The built-in functions in the MLE library follow a naming convention:
+   MLE_LL_Dist: the log-likelihood function for 'Dist'. For example, MLE_LL_Expo.
    MLE_Mom_Dist: the method-of-moments estimators for 'Dist'
+   If you are implementing your own custom distribution, the naming convention is:
+   LL_Dist and MoM_Dist.  For example, LL_MyDist and MoM_MyDist.
 */
 start lik_func_name(distname, role);
    if upcase(role)="LL" then do;
       prefix = "lik_LL_";
+      user_prefix = "LL_";
    end;
    else if upcase(role)="MOM" then do;
       prefix = "lik_MOM_";
+      user_prefix = "MOM_";
    end;
    suffix = lik_dist_suffix(distname);
-   if missing(suffix) then 
-      func_name = kstrip(upcase(role)) + "_" + kstrip(distname);  /* by convention */
+   if missing(suffix) then do;
+      /* User-defined distribution - check if name already has the prefix */
+      distname_upper = upcase(strip(distname));
+      if substr(distname_upper, 1, length(user_prefix)) = user_prefix then
+         func_name = kstrip(distname);  /* Already has prefix, use as-is */
+      else
+         func_name = kstrip(upcase(role)) + "_" + kstrip(distname);  /* Add prefix by convention */
+   end;
    else
       func_name = prefix + kstrip(suffix);    /* built-in func */
    return( func_name );
