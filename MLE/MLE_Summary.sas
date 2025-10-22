@@ -5,7 +5,7 @@
 /* MLE_Summary: Summary of MLE fit results
    
    SYNTAX:
-   call MLE_Summary(FitObj, printOpt=, showCI=, alpha=, title=, showZ=, showP=);
+   call MLE_Summary(FitObj, printOpt=1, showCI=0, alpha=0.05);
    
    PARAMETERS:
    FitObj   = List object returned by MLE_Fit()
@@ -15,12 +15,9 @@
               2 = Extended: + Log-likelihood, gradient, Hessian
    showCI   = 1 to show confidence intervals, 0 otherwise (default=0)
    alpha    = Significance level for CI (default=0.05)
-   title    = Custom title for output (default uses distribution name)
-   showZ    = 1 to show Wald Z statistics (default=1)
-   showP    = 1 to show p-values (default=1)
 */
 
-start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05, title="", showZ=1, showP=1);
+start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05);
    /* Validate input */
    namesL = ListGetName(L);
    if ncol(namesL)=0 then do;
@@ -33,8 +30,6 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05, title="", showZ=1, showP=
    parmNames = L$"ParmNames";
    estimate = L$"Estimate";
    stdErr = L$"StdErr";
-   crit = L$"Crit";
-   critNames = L$"CritNames";
    
    /* Ensure column-vector shapes for printing */
    estimate = colvec(estimate);
@@ -42,47 +37,28 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05, title="", showZ=1, showP=
 
    /* Validate and setup parameter names */
    k = nrow(estimate);
-   if type(parmNames)^='C' | ncol(parmNames)^=k then do;
+   if type(parmNames)^='C' | ncol(parmNames)^=k then
       /* Fallback: create generic parameter names */
-      parmNames = j(1, k, "");
-      do i = 1 to k;
-         parmNames[i] = "Parm" + strip(char(i, 3));
-      end;
-   end;
-
-   /* Set title for output */
-   if strip(title)^="" then 
-      titleText = title;
-   else 
-      titleText = "MLE Fit Summary: " + dist + " Distribution";
-   
-   /* Use SAS title statement for GUI display */
-   stmt = 'title "' + titleText + '";';
-   call execute(stmt);
+      parmNames = "Parm1":("Parm" + strip(char(k, 3)));
 
    /* Build Parameter Estimates table */
    PE = estimate || stdErr;
    cNames = {"Estimate" "StdErr"};
 
-   /* Add Z statistic and p-value (Wald test) */
-   if showZ then do;
+   /* Add optional columns of statistics and p-value */
+   if showCI then do;
+      /* Wald Z statistic and p-value */
       z = j(k, 1, .);
       idx = loc(stdErr>0);
       if ncol(idx)>0 then z[idx] = estimate[idx] / stdErr[idx];
       PE = PE || z;
       cNames = cNames || {"Z"};
-      
-      if showP then do;
          p = j(k, 1, .);
          if ncol(idx)>0 then p[idx] = 2#(1 - cdf("Normal", abs(z[idx]), 0, 1));
          PE = PE || p;
          cNames = cNames || {"Pr>|Z|"};
-      end;
-   end;
-
    /* Add confidence intervals to table */
-   if showCI then do;
-      zCrit = probit(1 - alpha/2);
+      zCrit = quantile("Normal", 1 - alpha/2);
       lower = estimate - zCrit # stdErr;
       upper = estimate + zCrit # stdErr;
       PE = PE || lower || upper;
@@ -93,11 +69,15 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05, title="", showZ=1, showP=
    end;
 
    /* Print Parameter Estimates table */
-   print PE [label="Parameter Estimates" rowname=parmNames colname=cNames format=8.4];
+   lablText = "Parameter Estimates for " + dist + " Distribution";
+   print PE [label=lablText rowname=parmNames colname=cNames format=8.4];
 
    /* printOpt >= 1: Fit Criteria */
-   if printOpt >= 1 then
+   if printOpt >= 1 then do;
+      crit = L$"Crit";
+      critNames = L$"CritNames";
       print crit [label="Fit Criteria" colname=critNames format=8.4];
+   end;
 
    /* printOpt >= 2: Optimization Details */
    if printOpt >= 2 then do;
@@ -117,13 +97,10 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05, title="", showZ=1, showP=
       print eigval [label="Hessian Eigenvalues (should be negative)" format=10.4];
       
       if all(eigval < 0) then
-         print "NOTE: Hessian is negative definite (local maximum verified)";
+         call PrintToLog("Hessian is negative definite. Local maximum verified.", 0);
       else
-         print "WARNING: Hessian is not negative definite - may not be at local maximum";
+         call PrintToLog("Hessian is not negative definite. Solution is not a local maximum.", 1);
    end;
-   
-   /* Reset title */
-   call execute('title;');
    
 finish;
 
