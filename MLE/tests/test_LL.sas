@@ -37,7 +37,8 @@ alpha = 3;
 beta = 0.5;
 Param = alpha // beta;
 Y = randfun(N, "Beta", alpha, beta);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "beta");
+if ^isValid then print "ERROR in MLE_Init for Beta";
 ll = MLE_LL("beta", Param);
 *print ll[L="Beta LL"];
 if ^NumMatEqual(ll, Correct_Beta_LL) then 
@@ -49,7 +50,8 @@ N = 1000;
 scale = 3;
 Param = scale;
 Y = randfun(N, "Expo", scale);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "Expo");
+if ^isValid then print "ERROR in MLE_Init for Expo";
 ll = MLE_LL("Expo", scale);
 *print ll[L="Expo LL"];
 if ^NumMatEqual(ll, Correct_Expo_LL) then 
@@ -62,7 +64,8 @@ alpha = 4;
 lambda = 2;
 Param = alpha // lambda;
 Y = randfun(N, "Gamma", alpha, lambda);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "Gamma");
+if ^isValid then print "ERROR in MLE_Init for Gamma";
 ll = MLE_LL("Gamma", Param);
 *print ll[L="Gamma LL"];
 if ^NumMatEqual(ll, Correct_Gamma_LL) then 
@@ -75,7 +78,8 @@ mu = 4;
 sigma = 2;
 Param = mu // sigma;
 Y = randfun(N, "Gumbel", mu, sigma);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "Gumbel");
+if ^isValid then print "ERROR in MLE_Init for Gumbel";
 ll = MLE_LL("Gumbel", Param);
 *print ll[L="Gumbel LL"];
 if ^NumMatEqual(ll, Correct_Gumbel_LL) then 
@@ -88,7 +92,8 @@ mu = 4;
 sigma = lambda;
 Param = sigma // mu;
 Y = randfun(N, "IGauss", lambda, mu);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "IGauss");
+if ^isValid then print "ERROR in MLE_Init for IGauss";
 ll = MLE_LL("IGauss", Param);
 *print ll[L="IGauss LL"];
 if ^NumMatEqual(ll, Correct_IGauss_LL) then 
@@ -101,7 +106,8 @@ mu = 10;
 sigma = 2;
 Param = mu // sigma;
 Y = randfun(N, "Normal", mu, sigma);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "Normal");
+if ^isValid then print "ERROR in MLE_Init for Normal";
 ll = MLE_LL("Normal", Param);
 *print ll[L="Normal LL"];
 if ^NumMatEqual(ll, Correct_Normal_LL) then 
@@ -114,7 +120,8 @@ mu = 3;
 sigma = 0.5;
 Param = mu // sigma;
 Y = randfun(N, "lognormal", mu, sigma);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "lognormal");
+if ^isValid then print "ERROR in MLE_Init for Lognormal";
 ll = MLE_LL("lognormal", Param);
 *print ll[L="lognormal LL"];
 if ^NumMatEqual(ll, Correct_lognormal_LL) then 
@@ -128,7 +135,8 @@ c = 1.5;
 lambda = 2;
 Param = c // lambda;
 Y = randfun(N, "Weibull", c, lambda);
-run MLE_Init(Y);
+isValid = MLE_Init(Y, "Weibull");
+if ^isValid then print "ERROR in MLE_Init for Weibull";
 ll = MLE_LL("Weibull", Param);
 *print ll[L="Weibull LL"];
 if ^NumMatEqual(ll, Correct_Weibull_LL) then 

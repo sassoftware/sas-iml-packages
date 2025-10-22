@@ -164,7 +164,7 @@ finish mle_OPTIM;
 */
 start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
   /* Initialize the data */
-   run MLE_Init(y);
+   isValid = MLE_Init(y, DistName);
 
    /* Check which optional parameters were provided */
    param0_provided = ^isskipped(param0);
@@ -181,11 +181,13 @@ start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
    initial_point = validated$"initial_point";
    BoundsMatrix = validated$"BoundsMatrix";
    OptimMethodSetting = validated$"OptimMethodSetting";
-
+   if ^isValid then 
+      return( j(nrow(initial_point),1,.) ); /* return missing estimates if data invalid */
+      
    /* Get the log-likelihood function name */
    ll_func = lik_func_name(DistName, "LL");
 
-   /* Use the CALLOPTIM macro to handle optimization method calls based on SAS version */
+   /* Use the CALL mle_OPTIM function to handle optimization method calls based on SAS version */
    call mle_OPTIM(rc, soln, OptimMethodSetting, ll_func, initial_point, BoundsMatrix);
 
   /* Ensure column-vector result for consistency across SAS versions */
