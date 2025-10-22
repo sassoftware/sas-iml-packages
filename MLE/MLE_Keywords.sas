@@ -4,12 +4,24 @@
 /*********************************************************/
 
 
-start MLE_Init(y) global(gMLE_y);   
+start MLE_Init(y, distname=) global(gMLE_y);   
    gMLE_y = CompleteCases(colvec(y), "extract");
    n = nrow(gMLE_y);
    if n<3 then do;
       run PrintToLog("MLE_INIT: At least 3 nonmissing observations are required.",2);
+      return 0;
    end;
+   if ^IsSkipped(distname) then do;
+      /* check if data are valid for the specified distribution */
+      isValid = MLE_LL_ValidData(distname, gMLE_y);
+      if isValid=0 then do;
+         msg = "MLE_INIT: The data contain values that are invalid for the " + 
+                strip(distname) + " distribution.";
+         run PrintToLog(msg,2);
+         return 0;
+      end;
+   end;
+   return 1;
 finish;
 
 start MLE_End(_=0) global(gMLE_y);   
@@ -64,8 +76,9 @@ finish;
 /* The built-in functions in the MLE library follow a naming convention:
    MLE_LL_Dist: the log-likelihood function for 'Dist'. For example, MLE_LL_Expo.
    MLE_Mom_Dist: the method-of-moments estimators for 'Dist'
+   MLE_ValidData_Dist: function to check if data are valid for 'Dist'
    If you are implementing your own custom distribution, the naming convention is:
-   LL_Dist and MoM_Dist.  For example, LL_MyDist and MoM_MyDist.
+   LL_Dist, MoM_Dist, and ValidData_Dist.  For example, LL_MyDist, MoM_MyDist, etc.
 */
 start lik_func_name(distname, role);
    if upcase(role)="LL" then do;
@@ -75,6 +88,10 @@ start lik_func_name(distname, role);
    else if upcase(role)="MOM" then do;
       prefix = "lik_MOM_";
       user_prefix = "MOM_";
+   end;
+   else if upcase(role)="VALIDDATA" then do;
+      prefix = "lik_ValidData_";
+      user_prefix = "ValidData_";
    end;
    suffix = lik_dist_suffix(distname);
    if missing(suffix) then do;

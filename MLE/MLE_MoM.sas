@@ -7,7 +7,7 @@
 
 
 /* Method of Moments (MoM) for common distributions */
-start lik_MOM_Beta(_y);
+start lik_MoM_Beta(_y);
    y = colvec(_y);
    m = mean(y);
    s = std(y);
@@ -17,13 +17,13 @@ start lik_MOM_Beta(_y);
    return( alpha // beta );
 finish;
 
-start lik_MOM_Expo(_y);
+start lik_MoM_Expo(_y);
    y = colvec(_y);
    scale = mean(y);
    return( scale );
 finish;
 
-start lik_MOM_Gamma(_y);
+start lik_MoM_Gamma(_y);
    y = colvec(_y);
    m = mean(y);
    s2 = var(y);
@@ -53,7 +53,7 @@ start lik_MoM_IGauss(_y);
    return( lambda // mu );
 finish;
 
-start lik_MOM_LN2(_y);
+start lik_MoM_LN2(_y);
    y = colvec(_y);
    m1 = mean(y);
    m2 = ssq(y) / nrow(y);
@@ -62,7 +62,7 @@ start lik_MOM_LN2(_y);
    return( mu // sigma );
 finish;
 
-start lik_MOM_Normal(_y);
+start lik_MoM_Normal(_y);
    y = colvec(_y);
    mu = mean(y);
    sigma = std(y);
@@ -112,7 +112,9 @@ finish;
 
 start MLE_MoM(distname, _y);
    y = colvec(_y);   
-   run MLE_Init(y);          /* creates GLOBAL var */
+   isValid = MLE_Init(y, distname);          /* creates GLOBAL var */
+   if ^isValid then
+      return( . );
    /* construct name of function */
    func_name = lik_func_name(distname, "MoM");
    if missing(func_name) then 
@@ -122,13 +124,13 @@ start MLE_MoM(distname, _y);
 finish;
 
 store module=(
-      lik_MOM_Beta
-      lik_MOM_Expo
-      lik_MOM_Gamma
+      lik_MoM_Beta
+      lik_MoM_Expo
+      lik_MoM_Gamma
       lik_MoM_Gumbel
       lik_MoM_IGauss
-      lik_MOM_LN2
-      lik_MOM_Normal
+      lik_MoM_LN2
+      lik_MoM_Normal
       lik_MoM_Weib2_Root
       lik_MoM_Weib2
       MLE_MoM

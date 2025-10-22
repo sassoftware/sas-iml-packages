@@ -10,10 +10,11 @@ print "--- A successfult test prints only 'TEST DONE' ---";
 
 /* MLE_Init */
 y = {1, ., 2, ., ., 3, .};
-run MLE_Init(y);
-if ^all(gMLE_y = {1,2,3}) then print "gMLE_y is wrong";
+isValid = MLE_Init(y);
+if ^isValid | ^all(gMLE_y = {1,2,3}) then print "gMLE_y is wrong";
 
-run MLE_Init({. . . });  /* ERROR */
+isValid = MLE_Init({. . . });  /* ERROR */
+if isValid then print "ERROR: should be invalid data";
 run MLE_End();
 if ^(ncol(gMLE_y)=0) then print "gMLE_y is not empty";
 

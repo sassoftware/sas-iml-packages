@@ -63,13 +63,13 @@ run MLE_Plot(L_gamma);        /* overlay the curve on a histogram */
    and 
    ll = lik_LL_DistName(param) 
    For the the LL we must first execute
-     run MLE_Init(Y);
+   isValid = MLE_Init(Y);
    which defines the global variable gMLE_y.
    For completeness, we also include
-     run MLE_End(Y);
+   run MLE_End(Y);
    which frees the global variable gMLE_y.
    */
-run MLE_Init(Systolic);              /* create global variable */
+isValid = MLE_Init(Systolic);              /* create global variable */
 gamma_MOM = lik_MoM_Gamma(Systolic); /* copies Systolic to gMLE_y */
 ll = lik_LL_Gamma(gamma_MOM);        /* accesses gMLE_y */
 run MLE_End();                       /* frees global variable */
