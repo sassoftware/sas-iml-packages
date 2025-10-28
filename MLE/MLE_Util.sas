@@ -11,7 +11,20 @@
    COMPLETECASES function in SAS Viya.
 */
 %macro DefineSAS9UtilFuncs;
-%IF %sysevalf(&sysver = 9.4) %THEN %DO;
+
+start IsSAS9(_=0);
+%IF (&sysver = 9.4) %THEN %DO;
+   return(1);
+%END;
+%ELSE %DO;
+   return(0);
+%END; 
+finish;
+store module=(
+   IsSAS9
+   );
+
+%IF (&sysver = 9.4) %THEN %DO;
 
 /* Return the rows of a matrix M that are nonmissing. 
    Default: return a vector of the row numbers (indices) that are complete.
@@ -71,12 +84,12 @@ store module=(
     print result2;
 */
 %macro EVALFUNC1(rOut, fname, arg);
-%if %sysevalf(&sysver = 9.4) %then %do;
+%if (&sysver = 9.4) %then %do;
    if type(&fname.)='C' then 
-      cmd = "&rOut. = " + value("&fname.") + "( &arg. );";
+      _cmd = "&rOut. = " + value("&fname.") + "( &arg. );";
    else 
-      cmd = "&rOut. = &fname.( &arg. );";
-   call execute( cmd );
+      _cmd = "&rOut. = &fname.( &arg. );";
+   call execute( _cmd );
 %end;
 %else %do;
    if type(&fname.)='C' then 

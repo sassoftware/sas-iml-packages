@@ -4,7 +4,7 @@ QUIT;
 
 /* test calls to the top-level subroutine */
 PROC IML;
-%IF %sysevalf(&sysver = 9.4) %THEN %DO;
+%IF (&sysver = 9.4) %THEN %DO;
 load module=(
      CompleteCases
      PrintToLog
