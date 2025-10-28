@@ -76,7 +76,7 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05);
    if printOpt >= 1 then do;
       crit = L$"Crit";
       critNames = L$"CritNames";
-      print crit [label="Fit Criteria" colname=critNames format=8.4];
+      print crit [label="Fit Criteria" rowname=critNames c="Value" format=8.4];
    end;
 
    /* printOpt >= 2: Optimization Details */

@@ -109,7 +109,7 @@ start mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
    rc = -1;
    soln = j(nrow(initial_point), 1, .);
    errmsg = "ERROR: Unknown optimization method: " + kstrip(method) + ". ";
-   %if &sysver. = 9.4 %then %do;
+   %if (&sysver. = 9.4) %then %do;
       errmsg = errmsg + "Valid methods in SAS 9.4 are NLPQN and NLPNRA.";
       validMethods = {"NLPQN", "NLPNRA"};
    %end;
@@ -130,7 +130,7 @@ start mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
       call NLPQN(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
    else if upcase(method) = "NLPNRA" then 
       call NLPNRA(rc, soln, ll_func, initial_point) OPT=1 BLC=bounds_matrix;
-   %if &sysver. ne 9.4 %then %do;
+   %if (&sysver. ne 9.4) %then %do;
    else do;
       LowerBound = bounds_matrix[1,];
       UpperBound = bounds_matrix[2,];
