@@ -16,6 +16,31 @@
 /***********************************/
 
 
+/* Helper function to determine default parameter bounds for built-in distributions.
+   Returns a 2 x n_params matrix where:
+     - Row 1 contains lower bounds
+     - Row 2 contains upper bounds
+     - Missing value (.) indicates no constraint
+*/
+start mle_GetDefaultBounds(DistName, n_params);
+   BoundsMatrix = j(2, n_params, .);
+   keyword = lik_dist_keyword(DistName);
+
+   eps = 1e-8; /* small threshold value for strictly positive constraints */
+   if keyword = "BETA" then BoundsMatrix[1,] = eps;         /* alpha > 0, beta > 0 */
+   else if keyword = "EXPO" then BoundsMatrix[1,1] = eps;  /* sigma > 0 */
+   else if keyword = "GAMM" then BoundsMatrix[1,] = eps;    /* alpha > 0, lambda > 0 */
+   else if keyword = "GUMB" then BoundsMatrix[1,2] = eps;   /* mu unrestricted, sigma > 0 */
+   else if keyword = "IGAU" then BoundsMatrix[1,] = eps;    /* lambda > 0, mu > 0 */
+   else if keyword = "LN2" then BoundsMatrix[1,2] = eps;    /* mu unrestricted, sigma > 0 */
+   else if keyword = "NORM" then BoundsMatrix[1,2] = eps;   /* mu unrestricted, sigma > 0 */
+   else if keyword = "WEI2" then BoundsMatrix[1,] = eps;    /* c > 0, lambda > 0 */
+   else if keyword = "WEI3" then BoundsMatrix[1,] = eps;    /* c > 0, lambda > 0, theta > 0 */
+
+   return(BoundsMatrix);
+finish mle_GetDefaultBounds;
+
+
 /* Helper function to validate and prepare MLE input parameters
    Returns: a list containing validated initial_point, BoundsMatrix, and OptimMethodSetting
    
@@ -59,9 +84,10 @@ start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_pr
       end;
    end;
 
-   /* Bounds: user-supplied bounds or default is j(2, nrow(initial_point), .) */
+   /* Bounds: user-supplied bounds or automatically determined for built-in distributions */
    if ^Bounds_provided then do;
-      BoundsMatrix = j(2, nrow(initial_point), .);
+      /* Use automatic bounds for built-in distributions */
+      BoundsMatrix = mle_GetDefaultBounds(DistName, nrow(initial_point));
    end;
    else do;
       /* Validate Bounds dimensions before transposing */
@@ -70,10 +96,6 @@ start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_pr
       end;
       /* user-supplied bounds are stored as a two-column matrix, while NLP routines expect a two-row matrix */
       BoundsMatrix = T(Bounds);
-      /* Optionally: check lower <= upper for each parameter */
-      if any(BoundsMatrix[1,] > BoundsMatrix[2,]) then do;
-         STOP "ERROR: Lower bounds exceed upper bounds in Bounds matrix.";
-      end;
    end;
 
    /* OptimMethod: user-supplied optimization method or default is "NLPQN" */
@@ -246,6 +268,7 @@ start MLE_Fit(DistName, y,  param0=, OptimMethod=, Bounds=)  global(gMLE_y);
 finish MLE_Fit;
 
 store module=(
+      mle_GetDefaultBounds
       mle_ValidateInputs
       mle_OPTIM
       MLE
