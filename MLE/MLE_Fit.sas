@@ -36,6 +36,7 @@ start mle_GetDefaultBounds(DistName, n_params);
    else if keyword = "NORM" then BoundsMatrix[1,2] = eps;   /* mu unrestricted, sigma > 0 */
    else if keyword = "WEI2" then BoundsMatrix[1,] = eps;    /* c > 0, lambda > 0 */
    else if keyword = "WEI3" then BoundsMatrix[1,] = eps;    /* c > 0, lambda > 0, theta > 0 */
+
    return(BoundsMatrix);
 finish mle_GetDefaultBounds;
 
