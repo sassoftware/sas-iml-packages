@@ -17,16 +17,17 @@ The SAS IML functions are described in the documentation for the MLE package.
 ## Main functions
 
 The following high-level functions are designed to be called directly. These functions all start with the 'MLE' prefix. They are documented and fully tested.
-Although you can call the lower-level helper functions as well, the lower-level functions might be less robust and less documented.
+Although you can call the lower-level helper functions as well, the lower-level functions are less documented.
 
-- **MLE**: The main function for fitting distributions to data. The function returns a (1 x n_p) vector of parameter estimates, where n_p
-is the number of parameters in the distribution. 
+- **MLE**: The main function for fitting distributions to data. The function returns a (n_p x 1) vector of parameter estimates, where n_p
+is the number of parameters in the distribution. You can get the names of the parameters by calling the 
+**lik_dist_parmnames** function.
 - **MLE_Fit**: Similar to the MLE function, but the MLE_Fit function returns a list of results. This list can be printed by passing it to the MLE_Summary function.
 It can be used to create a graph by passing it to the MLE_Plot function. 
 - **MLE_Plot**: Creates a histogram of the data and overlays the MLE model.
 - **MLE_Summary**: Displays tables that summarize the results of the MLE_Fit function.
 - **MLE_MoM**: Returns the parameter estimates by using the method of moments (MoM). The MoM estimate can be used as an initial guess for MLE.
-- **MLE_LL**: Evaluate the loglikelihood function for a distribution at the specified value of the parameters.
+- **MLE_LL**: Evaluate the loglikelihood function for a distribution at a specified value of the parameters.
 - **MLE_Init** and **MLE_End**: Initializes and deletes (respectively) global variables needed for low-level routines.
 
 ## Documentation

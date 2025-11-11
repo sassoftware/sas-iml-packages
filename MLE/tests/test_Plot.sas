@@ -30,5 +30,5 @@ title "Histogram with Multiple Density Estimates";
 run MLE_Plot(L_gamma, L_weib); /* overlay curves on the histogram */
 
 
-*QUIT;
+QUIT;
 

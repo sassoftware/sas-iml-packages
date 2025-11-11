@@ -1,7 +1,72 @@
-/***********************************/
+/******************************************/
 /* Define plotting functions for PROC IML */
-/* See                                    */
-/***********************************/
+/******************************************/
+
+/* Syntax:
+     %EmulateHistogram(dsIn=DATASET, varIn=VARIABLE)
+   where 
+     DATASET = name of a SAS data set 
+     VARIABLE= name of variable in data set whose distribution you want to model
+ 
+   From Wicklin (2025), "Emulating Histograms with the HIGHLOW Statement in PROC SGPLOT",
+   https://blogs.sas.com/content/iml/2025/10/13/high-low-emulate-histogram.html
+
+   The macro does the following:
+      1. Writes a data set called _HistBins that contains variables 
+         _MIDPT_ : Centers of histogram bins
+         _COUNT_ : Frequency count in each bin
+         _PCT_   : Percentage of observations in each bin
+         _ZERO_  : The constant value 0, which is the lower boundary of the high-low plot
+      2. Creates the following macro variables:
+         &_VARNAME  : the name of the variable whose distribution is modeled
+         &_BINSTART : the value of the center of the first bin
+         &_BINEND   : the value of the center of the last bin
+         &_BINWIDTH : the width of the bins
+         &_NOBS     : the number of nonmissing observations in the data
+   You can emulate a histogram by using the HIGHLOW stmt in PROC SGPLOT:
+   proc sgplot data=_HistBins;
+      highlow x=_midpt_ low=_zero_ high=_obspct_ / type=bar barwidth=1;
+      yaxis min=0 offsetmin=0 grid;
+      xaxis values=(&_binStart to &_binEnd by &_binWidth) valueshint;
+   run;
+*/
+%macro EmulateHistogram(dsIn=, varIn=);
+%global _varName _binStart _binEnd _binWidth _NObs;
+proc univariate data=&dsIn noprint;
+   var &varIn;
+   histogram &varIn / outhist=_HistBins(rename=(_OBSPCT_=_PCT_)) noplot;
+   output out=_HistOut n=_NOBS_;        /* number of nonmissing observations */
+run;
+data _HistBins;
+   set _HistBins;
+   _ZERO_ = 0;        /* add baseline for histogram */
+   label _MIDPT_=&varIn   _PCT_="Percent"  _COUNT_="Count";
+run;
+/* create some useful macro variables */
+data _null_;
+   set _HistBins end=EOF;
+   if _N_=1 then 
+      call symputx("_binStart", _MIDPT_);
+   h = dif(_MIDPT_);
+   if EOF then do;
+      call symputx("_binEnd", _MIDPT_);
+      call symputx("_binWidth", h);
+      call symputx("_varName", "&varIn");
+   end;
+run;
+data _null_;
+   set _HistOut;
+   call symputx("_NOBS", _NOBS_);
+run;
+
+data _HistBins;
+set _HistBins;
+_ZERO_ = 0;        /* add baseline for histogram */
+label _MIDPT_ = &varIn
+      _PCT_   = "Percent"
+      _COUNT_ = "Count";
+run;
+%mend EmulateHistogram;
 
 /* call PROC UNIVARIATE to output histogram bins.
    Return the k x 2 matrix, M, where 
@@ -14,7 +79,7 @@ start mle_Plot_HistBins(Y, varName=parentname("Y"));
     submit varName;
       %let _currNotes = %sysfunc(getoption(NOTES)); /* save state */
       OPTIONS NONOTES;
-      %EmulateHistogramSetup(dsIn=_HistData, varIn=&varName);
+      %EmulateHistogram(dsIn=_HistData, varIn=&varName);
       OPTIONS &_currNotes;                          /* restore state */
     endsubmit;
     use _HistBins;
@@ -49,7 +114,7 @@ finish;
    OUTPUT:
       A plot is produced that overlays a histogram of X with the fitted distributions.
 */
-start mle_Plot_Overlay(X, DistNames, params, varName=parentname("Y"));
+start mle_Plot_Overlay(X, DistNames, params, varName=parentname("X"));
    M = mle_Plot_HistBins(X, varName);   /* side effect: writes _HistBins */
    call mle_Plot_BinsAndWidth(h, b1, bn, M[,1]);
    t = T( do( b1, bn, (bn-b1)/49) );
@@ -102,6 +167,7 @@ start MLE_Plot(L, L2=, L3=, L4=, L5=, L6=, L7=, L8=, L9=, L10=);
     if ^isSkipped(L8) then do;   Dist=Dist//L8$"Dist";  params=params//rowvec(L8$"Estimate");  end;
     if ^isSkipped(L9) then do;   Dist=Dist//L9$"Dist";  params=params//rowvec(L9$"Estimate");  end;
     if ^isSkipped(L10) then do;  Dist=Dist//L10$"Dist"; params=params//rowvec(L10$"Estimate"); end;
+PRINT PARAMS;
     call mle_Plot_Overlay(y, Dist, params);
     return;
 finish;
