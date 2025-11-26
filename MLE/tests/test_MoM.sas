@@ -10,7 +10,7 @@ QUIT;
 PROC IML;
 load module=_ALL_;
 
-print "--- A successfult test prints multiple tables and the text 'TEST DONE' ---";
+print "--- MLE_MoM: A successfult test prints multiple tables and the text 'TEST DONE' ---";
 call randseed(12345);
 
 /* Y ~ Beta(alpha, beta) */

@@ -30,6 +30,11 @@ finish;
 
 /***************************************************/
 
+start lik_GetValidatedData(y) global(gMLE_y);
+   gMLE_y = CompleteCases(colvec(y), "extract");
+   return( gMLE_y );
+finish;
+
 /* By default, return a unique KEYWORD for any valid distribution name. 
    KEYWORD VALUE:
    1  :  Return the 4-character KEYWORD used in the SAS procedures.
@@ -136,6 +141,7 @@ finish;
 store module=(
    MLE_Init
    MLE_End
+   lik_GetValidatedData
    lik_dist_keyword
    lik_dist_suffix
    lik_dist_name

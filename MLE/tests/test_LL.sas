@@ -9,7 +9,7 @@ QUIT;
 
 PROC IML;
 load module=_ALL_;
-print "--- A successfult test prints only 'TEST DONE' ---";
+print "--- MLE_LL: A successfult test prints only 'TEST DONE' ---";
 
 /* Helper function to check for equality between two character matrices */
 start NumMatEqual(A, B, tol=1e-3);

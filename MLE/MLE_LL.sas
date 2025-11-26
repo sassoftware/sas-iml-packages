@@ -103,7 +103,8 @@ finish;
 
 /*** direct top-level API ***/
 
-start MLE_LL(distname, param);
+start MLE_LL(distname, param) global(G_DEBUG);
+   IF G_DEBUG THEN run PrintLoc();
    /* construct name of function */
    func_name = lik_func_name(distname, "LL");
    if missing(func_name) then 
@@ -120,18 +121,19 @@ start MLE_LL_ValidData(distname, y);
    return( isValid );
 finish;
 
-start MLE_LL_and_Deriv(f, g, H, distname, param);
+start MLE_LL_and_Deriv(f, g, H, distname, param) global(G_DEBUG);
+   IF G_DEBUG THEN run PrintLoc();
    /* construct name of function */
    func_name = lik_func_name(distname, "LL");
    call nlpfdd(f, g, H, func_name, param);
 finish;
 
-/* Return PDFs of the various distributions evaluated on a uniform grid of X values:
+/* Return PDFs of the various distributions evaluated at x, which is usually a uniform grid of X values.
    INPUT:
    DistNames : a (k x 1) vector of distribution keyword names (eg, 'Normal')
    params    : a (k x 3) matrix of parameters, one row for each distribution
    x         : an (N x 1) vector of values in the support of the distribution. 
-               Each PDF is evaluated at the points in x, which is usually on a regular grid.
+               Each PDF is evaluated at the points in x, which is usually a regular grid.
    OUTPUT:
    Labl: A vector of groups of the form DIST(parm1,parm2)  (eg, 'Normal(1.23,4.56)')
    P   : An (m x k) matrix of PDFs. The i_th column is the PDF at x for the i_th distribution

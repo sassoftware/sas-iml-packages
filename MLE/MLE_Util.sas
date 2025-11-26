@@ -10,7 +10,7 @@
    In SAS 9.4, the macro defines a function that emulates the 
    COMPLETECASES function in SAS Viya.
 */
-%macro DefineSAS9UtilFuncs;
+%macro DefineUtilFuncs;
 
 start IsSAS9(_=0);
 %IF (&sysver = 9.4) %THEN %DO;
@@ -20,9 +20,24 @@ start IsSAS9(_=0);
    return(0);
 %END; 
 finish;
+
+/* Debugging macro to unconditionally print the name of the module that contains the macro */
+start PrintLoc(level=2);
+   stack = ModuleStack();
+   if level=0 then 
+      levels = 2:nrow(stack);
+   else 
+      levels = level;
+   location = stack[levels];
+   print location[L="Module"];
+finish;
+
 store module=(
    IsSAS9
+   PrintLoc
    );
+
+
 
 %IF (&sysver = 9.4) %THEN %DO;
 
@@ -66,9 +81,9 @@ store module=(
       PrintToLog
       );
 %end;
-%mend DefineSAS9UtilFuncs;
+%mend DefineUtilFuncs;
 
-%DefineSAS9UtilFuncs;
+%DefineUtilFuncs;
 
 /* Indirect calling of a function that has 1 arg. In SAS 9
    use CALL EXECUTE. In Viya, use FUNCEVAL.
@@ -100,3 +115,37 @@ store module=(
       call PrintToLog('Incorrect call to %EVALFUNC1 macro', 1);
 %end;
 %mend EVALFUNC1; 
+
+/* Debugging macro to conditionally print an IML symbols if a specified variable is nonzero.
+   Use the PARMBUFF option on the macro definition. See
+   https://blogs.sas.com/content/sgf/2017/06/16/using-parameters-within-macro-facility/ 
+   https://blogs.sas.com/content/iml/2025/12/01/debugging-tips-iml.html
+
+   Example syntax:
+   proc iml;
+   start MyFunction(a, b) global(G_DEBUG);
+     %DEBUGPRINT(G_DEBUG, a, b)
+     return 1;
+   finish;
+
+   G_DEBUG = 1;
+   x = {1 2, 3 4};
+   y = {5 6};
+   z = MyFunction(x, y);
+
+   G_DEBUG = 0; 
+   z = MyFunction(x, y);
+*/
+%macro DEBUGPRINT / parmbuff;
+DO;
+   IF (%scan(&syspbuff,1)) THEN DO;
+   %local i cnt;
+   %let cnt = %sysfunc(countw(&syspbuff));
+   %do i= 2 %to &cnt;
+      _arg = %scan(&syspbuff,&i);
+      print _arg[L="%scan(&syspbuff,&i)"];
+   %end;
+   END;
+   free _arg;
+END;
+%mend DEBUGPRINT;
