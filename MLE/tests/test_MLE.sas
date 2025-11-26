@@ -5,7 +5,7 @@ QUIT;
 /* test calls to the top-level subroutine */
 PROC IML;
 load module=_ALL_;
-print "--- A successfult test prints only 'TEST DONE' ---";
+print "--- MLE: A successfult test prints only 'TEST DONE' ---";
 
 use sashelp.heart;
    read all var "Systolic";
@@ -635,8 +635,8 @@ est_weibull_NLPNRA = MLE("Weibull", Y_weibull, , "NLPNRA");
    if printFlag then 
       print res_weibull_methods[c={"NLPQN" "NLPNRA"} r={"c" "lambda"} L="Optim Methods: Weibull"];
    correct = {
-   2.4787197	2.4787195 ,
-   4.8807105	4.8807104
+   2.4787197   2.4787195 ,
+   4.8807105   4.8807104
    };
    if max(abs(res_weibull_methods-correct)) > 1e-4 then 
       print "ERROR: Optim Methods: Weibull";
@@ -689,7 +689,7 @@ est_gumbel_NLPNRA = MLE("Gumbel", Y_gumbel, , "NLPNRA");
    if printFlag then 
       print res_gumbel_methods[c={"NLPQN" "NLPNRA"} r={"mu" "sigma"} L="Optim Methods: Gumbel"];
    correct = {
-   2.0732522	2.0732518 ,
+   2.0732522   2.0732518 ,
    1.5377422 1.537742
    };
    if max(abs(res_gumbel_methods-correct)) > 1e-4 then 

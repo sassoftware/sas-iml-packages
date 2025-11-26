@@ -281,12 +281,11 @@ run MLE_Summary(L18, 1, 1, 0.10);  /* alpha=0.10 */
 
 
 /* ========================================
-   TEST 19: Custom Title Label
-   Expected: Custom title in output
+   TEST 19: 
    ======================================== */
 Y19 = {2, 3, 4, 5, 6, 7};
 L19 = MLE_Fit("Expo", Y19);
-run MLE_Summary(L19, 1, 1, 0.05, "Exponential Fit (Custom Title)");
+run MLE_Summary(L19, 1, 1, 0.05);
 
 
 /* ========================================
@@ -299,23 +298,22 @@ run MLE_Summary(L20, 1, 1);
 
 
 /* ========================================
-   TEST 21: showZ=0, showP=0 Options
-   Expected: No Z-statistics or p-values in table
+   TEST 21: 
    ======================================== */
 Y21 = j(100, 1, .);
 call randgen(Y21, "Normal", 5, 2);
 L21 = MLE_Fit("Normal", Y21);
-run MLE_Summary(L21, 1, 0, 0.05, "", 0, 0);  /* showZ=0, showP=0 */
+run MLE_Summary(L21, 1, 0, 0.05);
 
 
 /* ========================================
-   TEST 22: All Options Combined - printOpt=2 + CI
+   TEST 22: All Options Combined 
    Expected: Extended output with all features
    ======================================== */
 Y22 = j(200, 1, .);
 call randgen(Y22, "Gamma", 3, 2);
 L22 = MLE_Fit("Gamma", Y22);
-run MLE_Summary(L22, 2, 1, 0.05, "Comprehensive Gamma Analysis");
+run MLE_Summary(L22, 2, 1, 0.05);
 
 
 QUIT;

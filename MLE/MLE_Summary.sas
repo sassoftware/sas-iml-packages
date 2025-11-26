@@ -17,7 +17,8 @@
    alpha    = Significance level for CI (default=0.05)
 */
 
-start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05);
+start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05) global(G_DEBUG);
+   IF G_DEBUG THEN  run PrintLoc();
    /* Validate input */
    namesL = ListGetName(L);
    if ncol(namesL)=0 then do;
@@ -53,10 +54,10 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05);
       if ncol(idx)>0 then z[idx] = estimate[idx] / stdErr[idx];
       PE = PE || z;
       cNames = cNames || {"Z"};
-         p = j(k, 1, .);
-         if ncol(idx)>0 then p[idx] = 2#(1 - cdf("Normal", abs(z[idx]), 0, 1));
-         PE = PE || p;
-         cNames = cNames || {"Pr>|Z|"};
+      p = j(k, 1, .);
+      if ncol(idx)>0 then p[idx] = 2#(1 - cdf("Normal", abs(z[idx]), 0, 1));
+      PE = PE || p;
+      cNames = cNames || {"Pr>|Z|"};
    /* Add confidence intervals to table */
       zCrit = quantile("Normal", 1 - alpha/2);
       lower = estimate - zCrit # stdErr;

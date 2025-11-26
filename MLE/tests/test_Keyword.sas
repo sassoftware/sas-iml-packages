@@ -6,7 +6,7 @@ QUIT;
 /* tests */
 proc iml;
 load module= _ALL_;
-print "--- A successfult test prints only 'TEST DONE' ---";
+print "--- MLE_Keywords: A successfult test prints only 'TEST DONE' ---";
 
 /* MLE_Init */
 y = {1, ., 2, ., ., 3, .};

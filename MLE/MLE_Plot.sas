@@ -167,7 +167,6 @@ start MLE_Plot(L, L2=, L3=, L4=, L5=, L6=, L7=, L8=, L9=, L10=);
     if ^isSkipped(L8) then do;   Dist=Dist//L8$"Dist";  params=params//rowvec(L8$"Estimate");  end;
     if ^isSkipped(L9) then do;   Dist=Dist//L9$"Dist";  params=params//rowvec(L9$"Estimate");  end;
     if ^isSkipped(L10) then do;  Dist=Dist//L10$"Dist"; params=params//rowvec(L10$"Estimate"); end;
-PRINT PARAMS;
     call mle_Plot_Overlay(y, Dist, params);
     return;
 finish;

@@ -49,10 +49,10 @@ finish mle_GetDefaultBounds;
    Note: param0_provided, Bounds_provided, OptimMethod_provided are flags (1/0) indicating 
    whether the optional parameters were provided by the caller.
 */
-start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_provided, OptimMethod, OptimMethod_provided);
+start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_provided, OptimMethod, OptimMethod_provided) global(G_DEBUG);
+   IF G_DEBUG THEN run PrintLoc();  
    /* Get distribution keyword to determine if built-in or user-defined */
    keyword = lik_dist_keyword(DistName);
-   
    /* param0: initial guess, MoM for built-in, or user-defined MoM function name */
    if ^param0_provided then do;
       /* No param0 provided - use built-in MoM if available */
@@ -66,7 +66,12 @@ start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_pr
    else do;
       /* Check if param0 is a string (function name) or numeric (initial values) */
       if type(param0) = 'C' then do;  /* Character - treat as MoM function name */
-         %EVALFUNC1(initial_point, param0, y);
+         if upcase(strip(param0)) = "MOM" then
+            initial_point = MLE_MoM(DistName, y);
+         else do;     /* User-defined MoM function */
+            func_name = strip(param0);         
+            %EVALFUNC1(initial_point, func_name, y);
+         end;
          initial_point = colvec(initial_point);
       end;
       else do;  /* Numeric - use as initial values */
@@ -128,7 +133,8 @@ finish mle_ValidateInputs;
    Use %IF macro logic to call optimization methods based on SAS version and method name.
    This function handles the differences between SAS 9.4 and SAS Viya optimization routines.
 */
-start mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix);
+start mle_OPTIM(rc, soln, method, ll_func, initial_point, bounds_matrix) global(G_DEBUG);
+   IF G_DEBUG THEN run PrintLoc();
    rc = -1;
    soln = j(nrow(initial_point), 1, .);
    errmsg = "ERROR: Unknown optimization method: " + kstrip(method) + ". ";
@@ -185,15 +191,16 @@ finish mle_OPTIM;
 
    The function returns the MLE estimate for the distribution, given the data.
 */
-start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
-  /* Initialize the data */
-   isValid = MLE_Init(y, DistName);
+start MLE(DistName, _y, param0=, OptimMethod=, Bounds=) global(G_DEBUG);
+   IF G_DEBUG THEN  run PrintLoc(); 
+   isValid = MLE_Init(_y, DistName);
+   y = lik_GetValidatedData(_y);
 
    /* Check which optional parameters were provided */
    param0_provided = ^isskipped(param0);
    Bounds_provided = ^isskipped(Bounds);
    OptimMethod_provided = ^isskipped(OptimMethod);
-   
+
    /* Set default values for skipped parameters (will be ignored if flags are 0) */
    if ^param0_provided then _param0 = .; else _param0 = param0;
    if ^Bounds_provided then _Bounds = .; else _Bounds = Bounds;
@@ -212,15 +219,18 @@ start MLE(DistName, y, param0=, OptimMethod=, Bounds=);
 
    /* Use the CALL mle_OPTIM function to handle optimization method calls based on SAS version */
    call mle_OPTIM(rc, soln, OptimMethodSetting, ll_func, initial_point, BoundsMatrix);
-
+ 
   /* Ensure column-vector result for consistency across SAS versions */
    return( colvec(soln) );
 finish MLE;
 
 
 /* Main function that returns a fit object */
-start MLE_Fit(DistName, y,  param0=, OptimMethod=, Bounds=)  global(gMLE_y);
-
+start MLE_Fit(DistName, _y, param0=, OptimMethod=, Bounds=)  global(G_DEBUG);
+   IF G_DEBUG THEN run PrintLoc(); 
+   isValid = MLE_Init(_y, DistName);  
+   y = lik_GetValidatedData(_y);      /* removes missing values */
+   
    /* Check which optional parameters were provided */
    param0_provided = ^isskipped(param0);
    Bounds_provided = ^isskipped(Bounds);
@@ -238,22 +248,22 @@ start MLE_Fit(DistName, y,  param0=, OptimMethod=, Bounds=)  global(gMLE_y);
    OptimMethodSetting = validated$"OptimMethodSetting";
 
    /* Call MLE with validated parameters - note: we pass the nx2 Bounds format, not the 2xn BoundsMatrix */
-   est = MLE(DistName, y, initial_point, OptimMethodSetting, T(BoundsMatrix)); /* defines gMLE_y */
+   est = MLE(DistName, y, initial_point, OptimMethodSetting, T(BoundsMatrix)); 
 
    names = {"Dist", "y", "ParmNames", "Estimate", "LL", 
             "Grad", "Hessian", "StdErr", "Crit", "CritNames"};
    FitObj = ListCreate(names);  /* named list */
    FitObj$"Dist" = lik_dist_name(DistName);
-   FitObj$"y"    = gMLE_y;
+   FitObj$"y"    = y;
    FitObj$"ParmNames" = lik_dist_parmnames(DistName);
-   FitObj$"Estimate"  = est;
+   FitObj$"Estimate"  = est;   /* a column vector */
    run MLE_LL_and_Deriv(LL, Grad, Hess, DistName, est);
    FitObj$"LL"      = LL;
    FitObj$"Grad"    = Grad;
    FitObj$"Hessian" = Hess;
   /* StdErr: standard errors for estimates */
    cov = inv(-Hess);
-   StdErr = rowvec(sqrt(vecdiag(cov)));
+   StdErr = rowvec(sqrt(vecdiag(cov) <> 0)); /* avoid sqrt of negative due to numerical issues */
    FitObj$"StdErr" = StdErr;
    
    /* Crit, CritNames: LL-based fit criteria */

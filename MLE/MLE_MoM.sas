@@ -110,15 +110,16 @@ finish;
 
 /*** direct top-level API ***/
 
-start MLE_MoM(distname, _y);
-   y = colvec(_y);   
-   isValid = MLE_Init(y, distname);          /* creates GLOBAL var */
+start MLE_MoM(distname, _y) global(G_DEBUG);
+   IF G_DEBUG THEN run PrintLoc();   
+   isValid = MLE_Init(_y, DistName);           /* creates GLOBAL var */
    if ^isValid then
       return( . );
    /* construct name of function */
    func_name = lik_func_name(distname, "MoM");
    if missing(func_name) then 
       func_name = distname;   /* not a built-in function; call directly */
+   y = lik_GetValidatedData(_y);
    %EVALFUNC1( MoM_est, func_name, y);
    return( MoM_est );
 finish;
