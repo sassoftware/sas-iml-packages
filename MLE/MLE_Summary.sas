@@ -48,20 +48,37 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05) global(G_DEBUG);
 
    /* Add optional columns of statistics and p-value */
    if showCI then do;
-      /* Wald Z statistic and p-value */
-      z = j(k, 1, .);
+      stat = j(k, 1, .);
       idx = loc(stdErr>0);
-      if ncol(idx)>0 then z[idx] = estimate[idx] / stdErr[idx];
-      PE = PE || z;
-      cNames = cNames || {"Z"};
+      if ncol(idx)>0 then stat[idx] = estimate[idx] / stdErr[idx];
       p = j(k, 1, .);
-      if ncol(idx)>0 then p[idx] = 2#(1 - cdf("Normal", abs(z[idx]), 0, 1));
-      PE = PE || p;
-      cNames = cNames || {"Pr>|Z|"};
-   /* Add confidence intervals to table */
-      zCrit = quantile("Normal", 1 - alpha/2);
-      lower = estimate - zCrit # stdErr;
-      upper = estimate + zCrit # stdErr;
+
+      use_t_statistic = 1;
+      if use_t_statistic then do;
+         /* Compute degrees of freedom for t-distribution: df = n - k */
+         y = L$"y";
+         n = nrow(y);
+         DF = n - k;
+         PE = PE || j(k, 1, DF) ;
+         cNames = cNames || {"DF"};
+         /* t statistic and p-value*/
+         cNames = cNames || {"t Value"};
+         if ncol(idx)>0 then p[idx] = 2#(1 - cdf("T", abs(stat[idx]), DF));
+         PE = PE || p;
+         cNames = cNames || {"Pr>|t|"};
+         Crit = quantile("T", 1 - alpha/2, DF);
+      end;
+      else do;
+         /* Wald Z statistic and p-value */
+         cNames = cNames || {"Z"};
+         if ncol(idx)>0 then p[idx] = 2#(1 - cdf("Normal", abs(z[idx]), 0, 1));
+         PE = PE || p;
+         cNames = cNames || {"Pr>|Z|"};
+         Crit = quantile("Normal", 1 - alpha/2);      
+      end;
+      /* Add confidence intervals to table */
+      lower = estimate - Crit # stdErr;
+      upper = estimate + Crit # stdErr;
       PE = PE || lower || upper;
       clPct = char(100*(1-alpha), 6, 1);
       lowName = "Lower " + strip(clPct) + "% CL";
