@@ -1,7 +1,7 @@
 /* Master %INCLUDE for all module definitions. */
 /* Define the MLE_path macro before including this file. */
 /*For example:
-  %let MLE_Pasth = u:\gitpp\DEV\sas-iml-packages\MLE;
+  %let MLE_Path = u:\gitpp\DEV\sas-iml-packages\MLE;
   %include "&MLE_path/MLE_Define.sas";
 */
 
