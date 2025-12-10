@@ -1,20 +1,18 @@
 # The MLE repo
 
-# THIS PACKAGE IS UNDER DEVELOPMENT. DO NOT USE.
-
 ## Description
 
 This project is a library of SAS IML functions for fitting univariate distributions to data by using maximum likelihood estimation (MLE).
 The functions serve several purposes:
 - Show programmers how to use the optimization routines in SAS IML to perform MLE
 - Demonstrate best practices for MLE
-- Compare the older NLPNRA and NLPQN optimization routines with the newer NLPSOLVE routine. The NLPSOLVE routine is only available in SAS Viya.
+- Compare the older NLPNRA and NLPQN optimization routines with the newer NLPSOLVE routine. The NLPSOLVE routine is only available in SAS Viya
 - Provide visualization routines for MLE
-- Provide standard errors for parameter estimates
+- Provide standard errors for parameter estimates that are obtained from IML optimization routines
 
 ## Documentation
 
-The SAS IML functions are described in the documentation for the MLE package. The file MLE_Doc.docx is a Word file that describes the syntax of each public function. The documentation shows how to call the functions and provides examples of output.
+The SAS IML functions are described in the documentation for the MLE package. The file MLE_Doc.docx is a Word file that describes the syntax of each public function. The documentation shows how to call each top-level public function and provides examples of each function's output.
 
 ## Main functions
 
@@ -32,3 +30,39 @@ It can be used to create a graph by passing it to the MLE_Plot function.
 - **MLE_LL**: Evaluate the loglikelihood function for a distribution at a specified value of the parameters.
 - **MLE_Init** and **MLE_End**: Initializes and deletes (respectively) global variables needed for low-level routines.
 
+## Example
+
+```sas
+proc iml;
+load module=_all_;     /* load the MLE library */
+/* read data */
+use sashelp.heart;
+   read all var "Systolic";
+close;
+
+/* 1. Call top-level MLE routine to get parameter estimates */
+gamma_est = MLE("Gamma", Systolic);
+parm_names = lik_dist_parmnames("Gamma");
+print gamma_est[r=parm_names];
+
+/* 2. Get a list object that has information about the fit */
+L_gamma = MLE_Fit("Gamma", Systolic);
+
+/* 3. Display information about the fit */
+printLevel = 1;          /* control amount of output */
+showCI = 1;              /* show p-values and confidence intervals */
+run MLE_Summary(L_gamma, printLevel, showCI);  
+
+/* 4. Plot the data and overlay the fitted model */
+title "Plot Data and Fitted Model";
+run MLE_Plot(L_gamma);   /* overlay the curve on a histogram */
+
+/* 5. Fit a second model */
+L_logn = MLE_Fit("LogNormal", Systolic);
+run MLE_Summary(L_logn); /* show default output */
+
+/* 6. Overlay both fitted models */
+title "Histogram and Multiple Density Estimates";
+run MLE_Plot(L_gamma, L_logn); /* overlay curves on the histogram */
+QUIT;
+```
