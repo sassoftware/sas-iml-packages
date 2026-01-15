@@ -18,8 +18,7 @@ data testdata;
    drop i;
 run;
 
-/* Load MLE package */
-*%include "&MLE_path/MLE_Define.sas";
+/* BEFORE running this example, store the modules in the MLE package, as shown in test_Install.sas */
 
 proc iml;
 load module=_ALL_;

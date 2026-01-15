@@ -1,9 +1,6 @@
-/*
-proc iml;
-%include "&MLE_path.\MLE_define.sas";
-QUIT;
-*/
-/* tests */
+/* BEFORE running this example, store the modules in the MLE package, as shown in test_Install.sas */
+
+/* tests for keywords */
 proc iml;
 load module= _ALL_;
 print "--- MLE_Keywords: A successfult test prints only 'TEST DONE' ---";

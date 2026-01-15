@@ -1,20 +1,17 @@
 /*********************************************************/
-/* MLE_MLE.sas                                           */
+/* MLE_Fit.sas                                           */
 /* Define functions that return the maximum likelihood   */
-/* estimates for parameters in the built-in              */
-/* distributions                                         */
+/* parameter estimates for the built-in distributions.   */
 /*********************************************************/
-
 
 /***********************************/
 /* MLE and MLE_FIT have the same syntax. The difference is that 
    MLE returns ONLY the MLE estimate, whereas 
-   MLE_FIT returns a FItObj. The FitObj contains many statistics, 
-   such as LL, grad(LL), Hess(LL),
+   MLE_FIT returns a Fit Object (FitObj). The FitObj contains statistics
    and standard errors evaluated at a specified tuple of parameter values.
+   It also includes LL, grad(LL), and Hess(LL).
 */
 /***********************************/
-
 
 /* Helper function to determine default parameter bounds for built-in distributions.
    Returns a 2 x n_params matrix where:
@@ -28,16 +25,15 @@ start mle_GetDefaultBounds(DistName, eps=1E-4);
    BoundsMatrix = j(2, n_params, .);
    keyword = lik_dist_keyword(DistName);
 
-   if keyword = "BETA" then BoundsMatrix[1,] = eps;         /* alpha > 0, beta > 0 */
+   if      keyword = "BETA" then BoundsMatrix[1, ] = eps;   /* alpha > 0, beta > 0 */
    else if keyword = "EXPO" then BoundsMatrix[1,1] = eps;   /* sigma > 0 */
-   else if keyword = "GAMM" then BoundsMatrix[1,] = eps;    /* alpha > 0, lambda > 0 */
+   else if keyword = "GAMM" then BoundsMatrix[1, ] = eps;   /* alpha > 0, lambda > 0 */
    else if keyword = "GUMB" then BoundsMatrix[1,2] = eps;   /* mu unrestricted, sigma > 0 */
-   else if keyword = "IGAU" then BoundsMatrix[1,] = eps;    /* lambda > 0, mu > 0 */
-   else if keyword = "LN2" then BoundsMatrix[1,2] = eps;    /* mu unrestricted, sigma > 0 */
+   else if keyword = "IGAU" then BoundsMatrix[1, ] = eps;   /* lambda > 0, mu > 0 */
+   else if keyword = "LN2"  then BoundsMatrix[1,2] = eps;   /* mu unrestricted, sigma > 0 */
    else if keyword = "NORM" then BoundsMatrix[1,2] = eps;   /* mu unrestricted, sigma > 0 */
-   else if keyword = "WEI2" then BoundsMatrix[1,] = eps;    /* c > 0, lambda > 0 */
-   else if keyword = "WEI3" then BoundsMatrix[1,] = eps;    /* c > 0, lambda > 0, theta > 0 */
-
+   else if keyword = "WEI2" then BoundsMatrix[1, ] = eps;   /* c > 0, lambda > 0 */
+   else if keyword = "WEI3" then BoundsMatrix[1, ] = eps;   /* c > 0, lambda > 0, theta > 0 */
    return(BoundsMatrix);
 finish mle_GetDefaultBounds;
 
@@ -49,9 +45,11 @@ finish mle_GetDefaultBounds;
    Note: param0_provided, Bounds_provided, OptimMethod_provided are flags (1/0) indicating 
    whether the optional parameters were provided by the caller.
 */
-start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_provided, OptimMethod, OptimMethod_provided) global(G_DEBUG);
+start mle_ValidateInputs(DistName, y, param0, param0_provided, 
+                                      Bounds, Bounds_provided, 
+                                      OptimMethod, OptimMethod_provided) global(G_DEBUG);
    IF G_DEBUG THEN run PrintLoc();  
-   /* Get distribution keyword to determine if built-in or user-defined */
+   /* Get distribution keyword to determine if built-in */
    keyword = lik_dist_keyword(DistName);
    /* param0: initial guess, MoM for built-in, or user-defined MoM function name */
    if ^param0_provided then do;
@@ -59,7 +57,7 @@ start mle_ValidateInputs(DistName, y, param0, param0_provided, Bounds, Bounds_pr
       if keyword ^= ' ' then do;  /* Built-in distribution - use MoM */
          initial_point = MLE_MoM(DistName, y);
       end;
-      else do;  /* User-defined distribution - require param0 */
+      else do;  /* User-defined distribution: param0 is required */
          STOP "ERROR: param0 is required for user-defined distribution " + DistName + ". Provide numeric initial values or MoM function name.";
       end;
    end;

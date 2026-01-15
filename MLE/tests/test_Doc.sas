@@ -1,13 +1,6 @@
 /* Examples in the documentation for the MLE package */
 
-/* NOTE: You must define the MLE_Path variable to point to the directory that contains 
-   the MLE source code BEFORE you %include the MLE_Define.sas file */
-%let MLE_Path = u:\gitpp\DEV\sas-iml-packages\MLE;
-
-/* Use %INCLUDE to read source code and STORE functions to current storage library */
-proc iml;
-%include "&MLE_path/MLE_Define.sas";  /* one file with all modules */
-quit;
+/* BEFORE running this example, store the modules in the MLE package, as shown in test_Install.sas */
 
 proc iml;
 load module=_all_;     /* load the MLE library */

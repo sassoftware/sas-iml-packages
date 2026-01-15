@@ -1,6 +1,4 @@
-proc iml;
-%include "&MLE_path./MLE_define.sas";
-QUIT;
+/* BEFORE running this example, store the modules in the MLE package, as shown in test_Install.sas */
 
 proc iml;
 load module=_all_;     /* load the MLE library */

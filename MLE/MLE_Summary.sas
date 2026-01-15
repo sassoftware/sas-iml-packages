@@ -45,15 +45,13 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05) global(G_DEBUG);
    /* Build Parameter Estimates table */
    PE = estimate || stdErr;
    cNames = {"Estimate" "StdErr"};
-
    /* Add optional columns of statistics and p-value */
    if showCI then do;
       stat = j(k, 1, .);
       idx = loc(stdErr>0);
       if ncol(idx)>0 then stat[idx] = estimate[idx] / stdErr[idx];
       p = j(k, 1, .);
-
-      use_t_statistic = 1;
+      use_t_statistic = 1;  /* hard-code this option */
       if use_t_statistic then do;
          /* Compute degrees of freedom for t-distribution: df = n - k */
          y = L$"y";
@@ -62,6 +60,7 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05) global(G_DEBUG);
          PE = PE || j(k, 1, DF) ;
          cNames = cNames || {"DF"};
          /* t statistic and p-value*/
+         PE = PE || stat;
          cNames = cNames || {"t Value"};
          if ncol(idx)>0 then p[idx] = 2#(1 - cdf("T", abs(stat[idx]), DF));
          PE = PE || p;
@@ -70,6 +69,7 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05) global(G_DEBUG);
       end;
       else do;
          /* Wald Z statistic and p-value */
+         PE = PE || stat;
          cNames = cNames || {"Z"};
          if ncol(idx)>0 then p[idx] = 2#(1 - cdf("Normal", abs(z[idx]), 0, 1));
          PE = PE || p;
@@ -88,13 +88,13 @@ start MLE_Summary(L, printOpt=1, showCI=0, alpha=0.05) global(G_DEBUG);
 
    /* Print Parameter Estimates table */
    lablText = "Parameter Estimates for " + dist + " Distribution";
-   print PE [label=lablText rowname=parmNames colname=cNames format=8.4];
+   print PE [label=lablText rowname=parmNames colname=cNames format=BESTD8.];
 
    /* printOpt >= 1: Fit Criteria */
    if printOpt >= 1 then do;
       crit = L$"Crit";
       critNames = L$"CritNames";
-      print crit [label="Fit Criteria" rowname=critNames c="Value" format=8.4];
+      print crit [label="Fit Criteria" rowname=critNames c="Value" format=BESTD8.];
    end;
 
    /* printOpt >= 2: Optimization Details */

@@ -1,8 +1,6 @@
-proc iml;
-%include "&MLE_path./MLE_define.sas";
-QUIT;
+/* BEFORE running this example, store the modules in the MLE package, as shown in test_Install.sas */
 
-/* test calls to the top-level subroutine */
+/* test calling the top-level subroutines */
 PROC IML;
 load module=_ALL_;
 print "--- MLE: A successfult test prints only 'TEST DONE' ---";

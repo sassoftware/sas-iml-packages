@@ -21,7 +21,8 @@ start IsSAS9(_=0);
 %END; 
 finish;
 
-/* Debugging macro to unconditionally print the name of the module that contains the macro */
+/* Debugging function to print the name of the calling module. See
+   https://blogs.sas.com/content/iml/2025/12/01/debugging-tips-iml.html */
 start PrintLoc(level=2);
    stack = ModuleStack();
    if level=0 then 
@@ -36,7 +37,6 @@ store module=(
    IsSAS9
    PrintLoc
    );
-
 
 
 %IF (&sysver = 9.4) %THEN %DO;
@@ -86,7 +86,8 @@ store module=(
 %DefineUtilFuncs;
 
 /* Indirect calling of a function that has 1 arg. In SAS 9
-   use CALL EXECUTE. In Viya, use FUNCEVAL.
+   use CALL EXECUTE. In Viya, use FUNCEVAL. See
+   https://blogs.sas.com/content/iml/2017/11/01/pass-function-name-sasiml.html
    EXAMPLE:
     start foo(x); 
        return(x+1);
