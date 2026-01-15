@@ -5,7 +5,6 @@
 /* guess for an MLE optimization to use)                 */
 /*********************************************************/
 
-
 /* Method of Moments (MoM) for common distributions */
 start lik_MoM_Beta(_y);
    y = colvec(_y);

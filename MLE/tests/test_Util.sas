@@ -1,6 +1,4 @@
-proc iml;
-%include "&MLE_path./MLE_util.sas";
-QUIT;
+/* BEFORE running this example, store the modules in the MLE package, as shown in test_Install.sas */
 
 /* test calls to the top-level subroutine */
 PROC IML;

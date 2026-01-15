@@ -3,7 +3,6 @@
 /* Define functions related to distribution keywords.    */
 /*********************************************************/
 
-
 start MLE_Init(y, distname=) global(gMLE_y);   
    gMLE_y = CompleteCases(colvec(y), "extract");
    n = nrow(gMLE_y);
