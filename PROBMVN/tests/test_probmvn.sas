@@ -1,0 +1,609 @@
+options ps=32000 nodate nonumber;
+
+proc iml;
+load module=_all_;
+
+/* --- TEST SUITE --- */ 
+
+/* basic validation test */
+call randseed(12345);
+testName = "Test 0: 5-D Identity Matrix; [a,b]=[-2,2] in all coordinates";
+R = i(5);
+n = ncol(R);
+lower = j(1,n,-2);
+upper = j(1,n, 2);
+prob = probmvn_mod(lower, upper, R);
+correct = prod(cdf("Normal", upper) - cdf("Normal", lower));
+run check_test(testName, prob, correct);
+
+
+/***********************************************************/
+/* FIRST, test with lower limits set to -Infinity (missing).
+   We have many tests for the CDF. Reuse them. */
+/***********************************************************/
+
+/* 1. 4-D Identity Matrix */
+testName = "Test 1: 4-D Identity Matrix; CDF";
+R = I(4);
+n = ncol(R);
+upper = {0 -1 -2 3};
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, R);
+correct = prod(cdf("Normal", upper));
+run check_test(testName, prob, correct);
+
+/* 2a. 5-D Identity Matrix */
+testName = "Test 2a: 5-D Identity Matrix; CDF";
+R = I(5);
+upper = {1 1 1 1 1};
+n = ncol(R);
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, R);
+correct = prod(cdf("Normal", upper));
+run check_test(testName, prob, correct);
+
+/* 2b. 5-D Diagonal Matrix */
+testName = "Test 2b: 5-D Diagonal Matrix";
+R = diag({4,2,1,9,5});
+lower = {-2 0 -1 -3 -5}; 
+upper = { 2 1  1  2  5};
+prob = probmvn_mod(lower, upper, R);
+correct = 1;
+do i = 1 to ncol(lower);
+   correct = correct * probuvn_mod(Lower[i], Upper[i], sqrt(R[i,i]));
+end;
+run check_test(testName, prob, correct);
+
+/* 3. 5-D Rank-1 Update (Equicorrelated) 
+   Let R = 0.5*I + 0.5*11'. This is equivalent to rho=0.5 
+   For rho=0.5, b=0, the prob is 1/(dim+1) = 1/6 = 0.16666...
+*/
+testName = "Test 3: 5-D Equicorrelated (rho=0.5); CDF";
+v = j(5,1, sqrt(0.5));
+R = 0.5*I(5) + v*v`;
+upper = {0 0 0 0 0};
+n = ncol(R);
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, R);
+correct = 1/6;
+run check_test(testName, prob, correct);
+
+/* 4. 5-D Min Matrix */
+testName = "Test 4: 5-D Min Matrix; CDF";
+Sigma = {1 1 1 1 1, 
+         1 2 2 2 2, 
+         1 2 3 3 3, 
+         1 2 3 4 4, 
+         1 2 3 4 5};
+upper = 0:4;
+n = ncol(Sigma);
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, Sigma);
+correct = 0.4597946;
+run check_test(testName, prob, correct);
+
+/* 4a. 5-D Min Matrix G&B p. 5, Eqn 1.8 */
+testName = "Test 4a: 5-D Min Matrix G & B p. 5, Eqn 1.8, Rectangular domain";
+L = -1:-5;
+U = 2:6;
+prob = probmvn_mod(L, U, Sigma);
+correct = 0.7615;
+run check_test(testName, prob, correct);
+
+/* 5. 8-D Min Matrix */
+testName = "Test 5: 8-D Min Matrix; CDF";
+Sigma = {1 1 1 1 1 1 1 1, 
+         1 2 2 2 2 2 2 2, 
+         1 2 3 3 3 3 3 3, 
+         1 2 3 4 4 4 4 4, 
+         1 2 3 4 5 5 5 5, 
+         1 2 3 4 5 6 6 6, 
+         1 2 3 4 5 6 7 7, 
+         1 2 3 4 5 6 7 8};
+upper = 0:7;
+n = ncol(Sigma);
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, Sigma);
+correct = 0.4590496;
+run check_test(testName, prob, correct);
+
+/* 5a: 8-D Min Matrix G&B p. 5, Eqn 1.9 */
+testName = "Test 5a: 8-D Min Matrix G & B p. 5, Eqn 1.9, Rectangular domain";
+L = -1:-8;
+U = 2:9;
+prob = probmvn_mod(L, U, Sigma);
+correct = 0.7595;
+run check_test(testName, prob, correct);
+
+/* 6. A kxk equicorrelated matrix with rho=0.5 and b=0.
+      Theoretical prob is 1/(k+1) 
+*/
+testName = "Test 6: Several equicorrelated matrices (rho=0.5); CDF";
+kk = {9, 10, 15, 20};
+kk = {9, 10, 15};
+do i=1 to nrow(kk); 
+   n = kk[i];
+   print "--- Dimension =" n[L=""] "---";
+   v = j(n,1,sqrt(0.5));
+   R = 0.5*I(n) + v*v`;
+   upper = j(1,n,0);
+   lower = j(1, n, .); 
+   prob = probmvn_mod(lower, upper, R);
+   correct = 1/(n+1);
+   run check_test(testName, prob, correct);
+end;
+
+/* 7. Rank-1 singular correlation matrix.
+   If R is a matrix of all 1s, then X1=X2=...=Xn.
+   P(X1 < 1, X2 < 2, ..., X8 < 8) = P(X1 < min(upper)) = P(X1 < 1).
+*/
+testName = "Test 7a: 5-D Singular (All 1s); CDF";
+n = 5;
+R = j(n,n,1);
+upper = 0:n-1;
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, R);
+correct = cdf("Normal", min(upper));
+run check_test(testName, prob, correct);
+
+testName = "Test 7b: 8-D Singular (All 1s); CDF";
+n = 8;
+R = j(n,n,1);
+upper = 1:n;
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, R);
+correct = cdf("Normal", min(upper));
+run check_test(testName, prob, correct);
+
+/* 8. Block-diagonal correlation matrix. If the blocks are 1x1 and 2x2,
+      then the MVN probability is the product of univariate and bivariate probs.
+*/
+testName = "Test 8: Block-Diagonal Matrix; CDF";
+/* Test 9: 5-D Block Diagonal Decomposition */
+/* Construct the Block Diagonal Correlation Matrix */
+R = { 1.0  0.5  0.0  0.0  0.0,
+       0.5  1.0  0.0  0.0  0.0,
+       0.0  0.0  1.0  0.0  0.0,
+       0.0  0.0  0.0  1.0 -0.3,
+       0.0  0.0  0.0 -0.3  1.0 };
+n = ncol(R);
+upper = {0.5  0.8  0.4  1.0 -0.2};
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, R);
+/* Calculate the correct value using the product of components */
+p1 = probbnrm(0.5, 0.8, 0.5);   /* Bivariate Block 1 */
+p2 = cdf("Normal", 0.4);       /* Univariate Block 2 */
+p3 = probbnrm(1.0, -0.2, -0.3); /* Bivariate Block 3 */
+correct = p1 * p2 * p3;
+run check_test(testName, prob, correct);
+
+/* 9. 3-D Negative correlation matrix and orthant probability */
+testName = "Test 9: 3-D Negative Equicorrelated; CDF";
+R = {1.0 -0.6 -0.4, 
+    -0.6  1.0 -0.2, 
+    -0.4 -0.2 1.0};
+upper = {0 0 0};
+n = ncol(R);
+lower = j(1, n, .); 
+prob = probmvn_mod(lower, upper, R);
+/* Exact formula for q=3, b=0:
+   P = 1/8 + 1/(4pi) * sum(arsin(rho_ij))
+*/
+rho_ij = R[{2 3 6}];
+correct = 1/8 + 1/(4*constant("pi")) * sum(arsin( rho_ij ));
+run check_test(testName, prob, correct);
+
+
+/***********************************************************/
+/* SECOND, test with structured problems for which the exact answer is known. 
+   10. Independent ractangles: If R=I(n), then the MVN probability is the 
+      product of univariate probabilities.
+   11. Singular correlation: If R is entirely 1s, it is a rank-1 matrix, so
+      X_1 = X_2 = ... = X_n = Z \sim N(0,1). The probability that all 
+      X_i fall within their respective (L_i, U_i) bounds is the 
+      probability that Z falls in the tightest intersecting interval.
+   12. Positive Orthant (Equicorrelated): For an equicorrelated matrix with 
+      rho=0.5, we know the left-tailed orthant probability 
+      P(X \le 0) = 1/(d+1). 
+      By symmetry, -X \sim MVN(0, R). Therefore, the positive orthant 
+      probability P(X > 0) is identical to P(X < 0). Test this by 
+      setting L = 0 and U = missing.
+   13. Block-Diagonal Matrix: The probability of 1-D and 2-D rectangular blocks
+      can be computed exactly by using the probuvn_std function for 1-D blocks
+      and using probbvn_std for 2-D blocks. The overall probability is the 
+      product of the block probabilities.
+   14. 3-D Mixed Orthant via Reflection: For a general 3-D correlation matrix, 
+      compute P(X_1 < 0, X_2 > 0, X_3 < 0). This requires 
+      L = {-Infty, 0, -Infty} and U = {0, Infty, 0}. 
+      If you substitute Y_2 = -X_2, you can reframe this as a standard lower orthant problem: 
+      P(X_1 < 0, Y_2 < 0, X_3 < 0). The distribution of this modified vector is MVN(0, R2), 
+      where the signs of row 2 and column 2 in the correlation matrix have been flipped. 
+      You can then use the known analytical 3-D arcsin formula on R2.
+*/
+/***********************************************************/
+/* Test 10: 4-D Identity Matrix, Rectangular Limits */
+test_name = "Test 10: 4-D Identity Matrix, Rectangular Limits";
+R = I(4);
+L = {-1.0  0.0 -0.5 -2.0};
+U = { 1.0  2.0  0.5  0.0};
+correct = prod( probuvn_mod(colvec(L), colvec(U)) );
+prob = probmvn_mod(L, U, R);
+run check_test(test_name, prob, correct);
+
+/* Test 11: 8-D Singular (All 1s) Rectangular Limits */
+test_name = "Test 11: 8-D Singular (All 1s), Rectangular Limits";
+k = 8;
+R = j(k,k,1);
+L = {-1.0 -2.0 -0.5 -3.0 -4.0 -1.5 -2.5 -1.0};
+U = { 2.0  1.5  3.0  2.5  1.0  4.0  3.5  1.0};
+/* The probability reduces to P( max(L) < Z < min(U) ) */
+correct = prod( probuvn_mod(max(L), min(U)) );
+prob = probmvn_mod(L, U, R);
+run check_test(test_name, prob, correct);
+
+/* Test 12: 5-D Equicorrelated Positive Orthant (rho=0.5) */
+test_name = "Test 12: 5-D Equicorrelated Positive Orthant";
+k = 5;
+v = j(k,1,sqrt(0.5));
+R = 0.5*I(k) + v*v`;
+L = j(1,k,0);
+U = j(1,k,.); /* infinity for upper limits */
+correct = 1/(k+1);
+prob = probmvn_mod(L, U, R);
+run check_test(test_name, prob, correct);
+
+/* Test 13: 5-D Block-Diagonal, Rectangular Limits */
+test_name = "Test 13: 5-D Block-Diagonal, Rectangular Limits";
+R = { 1.0  0.5  0.0  0.0  0.0,
+      0.5  1.0  0.0  0.0  0.0,
+      0.0  0.0  1.0  0.0  0.0,
+      0.0  0.0  0.0  1.0 -0.3,
+      0.0  0.0  0.0 -0.3  1.0 };
+L = {-1.0  0.0 -0.5 -1.0 -0.5};
+U = { 1.0  1.0  0.5  2.0  1.5};
+p1 = probbvn_std(L[,1:2], U[,1:2], 0.5);   * Bivariate Block 1 (Cols 1,2);
+p2 = probuvn_mod(L[,3], U[,3]);            * Univariate Block 2 (Col 3);
+p3 = probbvn_std(L[,4:5], U[,4:5], -0.3);  * Bivariate Block 3 (Cols 4,5);
+correct = p1 * p2 * p3;
+prob = probmvn_mod(L, U, R);
+run check_test(test_name, prob, correct);
+
+/* Test 14: 3-D Mixed Orthant with General Correlation */
+test_name = "Test 14: 3-D Mixed Orthant";
+/* Original general correlation matrix */
+R0 = { 1.0  0.6  0.4,
+       0.6  1.0  0.2,
+       0.4  0.2  1.0 };
+/* Compute P(X1 < 0, X2 > 0, X3 < 0) */
+L = {.  0 .};
+U = {0  . 0};
+prob = probmvn_mod(L, U, R0);
+/* By flipping the sign of X2, this becomes P(X1 < 0, Y2 < 0, X3 < 0).
+   The new correlation matrix R_star flips signs on row 2 and col 2. */
+rhos = R0[{2,3,6}];
+rhos[1] = -rhos[1]; /* rho_12 */
+rhos[3] = -rhos[3]; /* rho_23 */
+correct = 1/8 + 1/(4*constant("pi")) * sum(arsin(rhos));
+run check_test(test_name, prob, correct);
+
+/* Test 15: Repeat previous test for all combinations of signs of the off-diagonal correlations. */
+/* there are 8 possible combinations for the signs of the 3 corr coefficients */
+/* Compute P(X1 < 0, X2 > 0, X3 < 0) */
+L = {.  0 .};
+U = {0  . 0};
+signs = { 1  1  1    1  1  1   1  1 1, /* we already did first row */
+          1 -1  1   -1  1  1   1  1 1, 
+          1  1 -1    1  1  1  -1  1 1, 
+          1  1  1    1  1 -1   1 -1 1, 
+          1 -1 -1   -1  1  1  -1  1 1, 
+          1 -1  1   -1  1 -1   1 -1 1, 
+          1  1 -1    1  1 -1  -1 -1 1, 
+          1 -1 -1   -1  1 -1  -1 -1 1 };
+do i = 2 to nrow(signs);
+   S = shape(signs[i,], 3, 3);
+   R = R0 # S;
+   prob = probmvn_mod(L, U, R);
+   rhos = R[{2,3,6}];
+   rhos[1] = -rhos[1]; /* rho_12 */
+   rhos[3] = -rhos[3]; /* rho_23 */
+   correct = 1/8 + 1/(4*constant("pi")) * sum(arsin(rhos));
+   test_name = "Test 15: 3-D Mixed Orthant, Version " + char(i,2);
+   run check_test(test_name, prob, correct);
+end;
+
+/* Test 16: Orthant probability in 4-D. See
+   https://blogs.sas.com/content/iml/2026/05/18/4d-orthant-probability-mvn.html
+*/
+/* The base case: P2. For a scalar correlation, rho, returning the orthant probability, P2.
+   See https://blogs.sas.com/content/iml/2026/05/11/mvn-orthant-probability.html */
+start P2(rho);
+  return( 0.25 + arsin(rho) / (2*constant("pi")) );
+finish;
+ 
+/* The sum of the I4 integrands. Instead of evaluating the three integrals separately,
+   evaluate the sum of the integrals and perform one numerical integration.   
+   Evaluates the Sun (1988) residual partial correlation matrix.
+   Whereas Genz/Bretz Eqn 2.8-2.9 uses a general covariance matrix, this function assumes 
+   R is a correlation matrix, so R[i,i]=1  */
+start ProbInt4(x) global(R_global);
+  R = R_global;
+  pi = constant("pi");
+  x2 = x # x;
+  sum = 0;
+ 
+  /* The sum of three terms: i=2, 3, and 4 */
+  do i = 2 to 4;
+    /* Determine the indices (j, k) of the two remaining variables */
+    if i=2 then do;      j=3; k=4; end;
+    else if i=3 then do; j=2; k=4; end;
+    else do;             j=2; k=3; end;
+ 
+    /* R_ii term: The quadratic denominator */
+    w = 1 - R[1,i]##2 * x2;          /* R[i,i]=1 for all i */
+    if w< 1E-12 then w = 1E-12;      /* Numerical safeguard */
+ 
+    /* Compute the conditional variances and covariance. The are a_11, a_12, etc, in Sun and Asano */
+    a_jj = 1      -R[1,j]##2 * x2   -((R[i,j] - R[1,i]*R[1,j]*x2)##2) / w;
+    a_kk = 1      -R[1,k]##2 * x2   -((R[i,k] - R[1,i]*R[1,k]*x2)##2) / w;
+    a_jk = R[j,k] -R[1,j]*R[1,k]*x2 -(R[i,j] - R[1,i]*R[1,j]*x2)*(R[i,k] - R[1,i]*R[1,k]*x2) / w;
+ 
+    /* rho is the off-diagonal element of the conditional correlation matrix */
+    rho = a_jk / sqrt(a_jj * a_kk);
+ 
+    /* ensure rho is in [-1,1]. See
+       https://blogs.sas.com/content/iml/2026/02/04/clip-values.html */
+    rho = ( -1 <> (rho >< 1) ); /* clamp to [-1,1] */
+ 
+    /* Call P2 function to get the I2 term */
+    I2_val = 2 * pi * ( P2(rho) - 0.25 );     /* this actually simplifies to ARSIN(rho) :-) */
+ 
+    /* Add the i-th term to the sum */
+    sum = sum + (R[1,i] / sqrt(w)) * I2_val;
+  end;
+  return(sum);
+finish;
+ 
+/* The main P4 function, which evaluates the Childs-Sun formula for 4 dimensions */
+start P4_Childs(R) global(R_global);
+  R_global = R; /* Set the global correlation matrix for QUAD */
+ 
+  /* Integrate ProbInt4 over the interval [0, 1] */
+  call quad(I4, "ProbInt4", {0 1});
+ 
+  /* Apply the Childs (1967) formula */
+  pi = constant("pi");
+  sum_arsin = sum( arsin(R[{2 3 4 7 8 12}]) );  /* sum of arcsine for all 6 off-diagonal elements */
+  prob = 1/16 + sum_arsin / (8*pi) + I4 / (4 * pi**2);  /* fixes the typo in Genz and Bretz, Eqn 2.8 */
+  return(prob);
+finish;
+ 
+/* --- Test all 16 orthant probabilities. We compare Childs formul in each octant to
+   a call to probmvn. See
+   https://blogs.sas.com/content/iml/2026/05/11/mvn-orthant-probability.html
+   https://blogs.sas.com/content/iml/2026/05/18/4d-orthant-probability-mvn.html
+*/
+R0 = {1.0  0.5  0.3  0.2,
+      0.5  1.0  0.4  0.3,
+      0.3  0.4  1.0  0.5,
+      0.2  0.3  0.5  1.0};
+L0 = {. . . .};
+U0 = {0 0 0 0};
+/* Generate all 16 combinations of sign vectors for 4-D orthants. See
+   https://blogs.sas.com/content/iml/2026/06/01/generate-all-combinations-of-signs.html */
+Signs = expandgrid({1 -1}, {1 -1}, {1 -1}, {1 -1});
+do i = 1 to nrow(Signs);
+   s = Signs[i,];
+   R = s # R0 # s`;
+   correct = P4_Childs(R);
+   /* now reverse the limits of integration every location where there is a -1 sign */
+   L = L0;
+   U = U0;
+   flip_idx = loc( s = -1 );
+   if ncol(flip_idx) > 0 then do;
+      L[flip_idx] = U0[ flip_idx ];
+      U[flip_idx] = L0[ flip_idx ];
+   end;
+   prob = probmvn_mod(L, U, R0);
+   test_name = "Test 16: 4x4 Orthant Probability (Childs, 1967): Orthant=" + putn(i,"f2.");
+   run check_test(test_name, prob, correct);
+end;
+
+/* Test 17: A series of rectangular regions for 5-D.
+   Include all possible ranges: 
+   (-Infty, Infty), (-Infty, b), (a, Infty), (a, b) 
+   The final test has all variables in (-Infty, Infty) so answer should be 1! */
+test_name = "--- Test 17: 36 Different 5-D Rectangular Regions:";
+print test_name[L=""] "only failures are printed ---";
+R = {1    -0.25  0.15 -0.35 -0.15 ,
+    -0.25  1    -0.4   0.55  0.35 ,
+     0.15 -0.4   1     0.05 -0.55 ,
+    -0.35  0.55  0.05  1     0.1  ,
+    -0.15  0.35 -0.55  0.1   1    };
+
+L_Block = {.M .M .M .M .M,
+           .M -1 -1 -1 .M,
+           -2 -1 .M -1 -1,
+           -3 .M -1 -2 -1,
+           -1 -3 -2 -1 -2,
+           -2 -1 -3 -2 -1  };
+U_Block = {.I  1  0  1 .I,
+            2  1 .I  1  0,
+            3  2  1 .I  1,
+            0  1  3  2  1,
+            1  3  2  1  0,
+           .I .I .I .I .I  };
+N = 5E5;
+/* use a double loop to test all combinations of lower and upper limits. 
+   For each combination, compute the QMC estimate and a 95% CI from MC simulation. 
+   If the QMC value is outside the 95% CI, print the limits. */
+do i = 1 to nrow(L_Block);
+   L = L_Block[i,];
+   do j = 1 to nrow(U_Block);
+      U = U_Block[j,];
+      prob = probmvn_mod(L, U, R);
+      /* Compute the MC estimate; see if the QMC value is in the 95% CI */
+      if any(L=. | U=.) then
+         correct_list = MC_PROBMVN_CL(5*N, L, U, R);  /* do extra computations for semi-infinite limits */
+      else 
+         correct_list = MC_PROBMVN_CL(N, L, U, R);
+      correct = correct_list$1;
+      lower95 = correct_list$2;
+      upper95 = correct_list$3;
+      if prob < lower95 | prob > upper95 then do;
+         run check_test(test_name, prob, correct);
+         if max(abs(prob-correct)) > 0.001 then 
+            print L, U;
+      end;
+   end;
+end;
+print test_name[L=""] "DONE ---";
+
+/* Test 18: Near-singular equicorrelated covariance matrix.
+   This guards numerical stability when rho is very close to 1 (but still PD). */
+TestName = "Test 18: 5-D Near-Singular Equicorrelated (rho=0.999), Mixed Limits";
+k = 5;
+rho = 0.999;
+R = (1-rho)*I(k) + rho*J(k,k,1);
+L = {-1.2  -0.8   .M  -0.3   0.0};
+U = { 0.6    .I   0.4   .I   1.1};
+prob = probmvn_mod(L, U, R);
+correct = MC_PROBMVN(1E6, L, U, R);
+run check_test(TestName, prob, correct);
+
+/* Test 19: A 3-D problem that reduces to lower-dimensional problems */
+TestName = "Test 19: 3-D Problem with (-Infty, Infty) Limits";
+L={.M -2 -1};
+U={.I  2 1};
+Sigma={1 1 1, 1 2 2, 1 2 3};
+prob = probmvn_mod(L, U, Sigma);
+correct = probbvn_mod(L[,2:3], U[,2:3], Sigma[2:3, 2:3]);
+run check_test(TestName + " (reduce to 2D)", prob, correct);
+
+L={.M -2 .M};
+U={.I  2 .I};
+prob = probmvn_mod(L, U, Sigma);
+correct = probuvn_mod(L[2], U[2], sqrt(Sigma[2,2]));
+run check_test(TestName + " (reduce to 1D)", prob, correct);
+
+L={.M .M .M};
+U={.I .I .I};
+prob = probmvn_mod(L, U, Sigma);
+correct = 1;
+run check_test(TestName + " (Degenerate)", prob, correct);
+
+/* Test 20: mvn_dfn singular-block accumulation subtlety.
+   In mvn_dfn, when aaa = g_corr[i+1,ik+1] is zero, the code must NOT finalize
+   the interval at row i. Instead, it accumulates limits into the same latent
+   variable and finalizes only when aaa>0 (or at i=n+1). */
+TestName = "Test 20: Singular-Block Limit Accumulation";
+L = {-1  0  .M};
+U = { 1  2  0.5};
+Sigma = {1 0 0,
+         0 1 1,
+         0 1 1};
+
+/* With the above value of Sigma, the lower-triangular matrix seen by mvn_dfn is
+   g_corr = {1 0 0,
+             0 0 0,
+             0 1 1};
+   g_corr[2,2]=0 forces a singular-block continuation at i=1.
+   g_corr[3,2]=1 ends the block at i=2.
+   g_corr[3,1]=0 removes any dependence on w in the final factor. */
+prob = probmvn_mod(L, U, Sigma);
+/* X1 is independent of (X2, X3), and X2=X3 a.s. because Sigma[2,3]=Sigma[2,2]=Sigma[3,3].
+   The joint constraint on X2=X3 collapses to max(L2,L3) < X2 < min(U2,U3) = (0, 0.5).
+   So the probability factors as P(-1<X1<1) * P(0<X2<0.5). */
+correct = probuvn_std(-1, 1) * probuvn_std(0, 0.5);
+run check_test(TestName+" (tol=1E-3)", prob, correct, 1e-3); 
+run check_test(TestName+" (tol=1E-5)", prob, correct, 1e-5);/* will FAIL until we implement the greedy pivot? */
+
+/* Test 21: Random examples with Monte Carlo validation. 
+   This is a sanity check to ensure that the QMC estimate is within the 95% CI of the MC estimate. */
+TestName = "--- Test 21: Random examples with Monte Carlo validation ---";
+print TestName[L=""] "only failures are printed ---";
+/* Generate a random correlation matrix and random limits for each sample */
+/* Note that a Toplitz correlation matrix is always SPD */
+dim_vec = 3:20;
+N = 5E5;
+tol = 1E-3;
+do i = 1 to ncol(dim_vec);
+   dim = dim_vec[i];
+   /* generate Toeplitz correlation matrix:
+      https://blogs.sas.com/content/iml/2015/09/23/large-spd-matrix.html */
+   h = 2/dim;
+   v = 20* do(1, -1+h, -h);
+   Sigma = toeplitz(v);
+   /* generate random mu */
+   mu = round(randfun(1//dim, "Uniform", -3, 3), 0.001);
+   /* generate random lower and upper limits */
+   L = mu - round(randfun(1//dim, "Uniform", 0, 3), 0.001);
+   num_inf = randfun(1, "Integer", 0, floor(dim/2)); /* number of infinite limits */
+   if num_inf > 0 then do;
+      Inf_idx = sample(1:dim, num_inf, "NoReplace");
+      L[Inf_idx] = .M;
+   end;
+   U = mu + round(randfun(1//dim, "Uniform", 0, 3), 0.001);
+   num_inf = randfun(1, "Integer", 0, floor(dim/3)); /* number of infinite limits */
+   if num_inf > 0 then do;
+      Inf_idx = sample(1:dim, num_inf, "NoReplace");
+      U[Inf_idx] = .I;
+   end;
+   prob = probmvn_mod(L, U, Sigma, mu); 
+
+   /* Compute the MC estimate; see if the QMC value is in the 95% CI */
+   if any(L=. | U=.) then
+      MC_list = MC_PROBMVN_CL(2*N, L, U, Sigma, mu);  /* do extra computations for semi-infinite limits */
+   else 
+      MC_list = MC_PROBMVN_CL(N, L, U, Sigma, mu);
+   MC_est  = MC_list$1;
+   lower95 = MC_list$2;
+   upper95 = MC_list$3;
+   if prob < lower95 | prob > upper95 then do;
+      run check_test(TestName + " (dim=" + char(i,3) + ")", prob, MC_est);
+      if abs(prob-MC_est) > tol then 
+         print L, mu, U, Sigma, 
+               prob MC_est lower95 upper95 (prob-MC_est)[L='Diff'] tol;
+   end;
+end;
+print TestName[L=""] "DONE ---";
+
+
+/* Test 22: A large matrix (N=32).
+   Use an NxN AR(1) correlation matrix, 
+   which is a banded structure where the off-diagonal elements are 
+   rho, rho^2, rho^3, etc.
+   Each variables has limits of integration (-Infinity, 2).
+   You might need to use -MEMSIZE 12G to run the dim=100 case.
+*/
+call randseed(54321, 1);
+tol = 1E-3;
+BaseTestName = "Test 22: CDF Problem: AR(1) Correlation Structure";
+rho = 0.90;
+NN = {32, 64, 100};
+do i = 1 to nrow(NN);
+   N = NN[i];
+   TestName = cat(BaseTestName, " (N=" + char(N,3) + ")");
+   /* Limits: (-Infinity, 2) for all variables */
+   L = j(1, N, .M);
+   U = j(1, N, 2);
+   /* Construct AR(1) Covariance Matrix */
+   Sigma = rho##distance(T(1:N), T(1:N), "L1");
+   t0 = time();
+   prob = probmvn_mod(L, U, Sigma);
+   t_probmvn = time() - t0;
+
+   /* Compute regular Monte Carlo estimate for comparison. Get a 95% confidence interval. */
+   t0 = time();
+   MC_list = MC_PROBMVN_CL(1E6, L, U, Sigma);
+   t_MC = time() - t0;
+   MC_est  = MC_list$1;
+   lower95 = MC_list$2;
+   upper95 = MC_list$3;
+   run check_test(TestName, prob, MC_est);
+   if max(abs(prob-MC_est)) > tol then 
+      print prob MC_est lower95 upper95;
+end;
+print BaseTestName[L=""] "--- DONE ---";
+
+Quit;
+

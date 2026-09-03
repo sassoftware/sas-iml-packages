@@ -164,7 +164,7 @@ Sigma={14.3 -1.2 -4.4,
 b  ={1.75  0.1 -1};
 prob = cdfmvn(b, Sigma, mu);
 
-start MonteCarloEstimate(N, b, Sigma, mu={0 0 0});
+start MC_CDF_Est(N, b, Sigma, mu={0 0 0});
    X = randnormal(N, mu, Sigma);
    inRegion = (X[,1] < b[1] & X[,2] < b[2] & X[,3] < b[3]);
    MC_Est = mean(inRegion);
@@ -172,7 +172,7 @@ start MonteCarloEstimate(N, b, Sigma, mu={0 0 0});
 finish;
 
 call randseed(1);
-correct = MonteCarloEstimate(1E6, b, Sigma, mu); /* Monte Carlo estimate = 0.022556 */
+correct = MC_CDF_Est(1E6, b, Sigma, mu); /* Monte Carlo estimate = 0.022556 */
 maxDiff = max(abs(prob-correct));
 if any(prob=.) | maxDiff > 1E-3 then 
    print "--- ERROR in Test 7 ---", maxDiff prob correct;
@@ -199,7 +199,7 @@ do i = 1 to nrow(signs);
    S = shape(signs[i,], 3, 3);
    R = R0 # S;
    prob = cdfmvn(b, R);
-   correct = MonteCarloEstimate(5E5, b, R);
+   correct = MC_CDF_Est(5E5, b, R);
    maxDiff = max(abs(prob-correct));
    if any(prob=.) | maxDiff > 1E-3 then 
       print "--- ERROR in Test 8 ---", maxDiff prob correct;
