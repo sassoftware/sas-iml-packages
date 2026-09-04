@@ -91,8 +91,8 @@ start probmvn_mod(L, U, Sigma, mu=j(1,ncol(Sigma),0));
    delta = 8.125;
    /* if a limit is outside of [-delta,delta], change it to +/-infinity.
       This value is chosen because CDF("Normal", delta) ~ constant("maceps") */
-   idx = loc(L_std<-delta); if ncol(idx)>0 then L_std[idx] = .M;
-   idx = loc(U_std> delta); if ncol(idx)>0 then U_std[idx] = .I;
+   idx = loc(L_std< -delta); if ncol(idx)>0 then L_std[idx] = .M;
+   idx = loc(U_std>  delta); if ncol(idx)>0 then U_std[idx] = .I;
    return probmvn_std(L_std, U_std, R); /* Note: From here on, we deal only with correlation matrices */
 finish;
 
