@@ -34,7 +34,7 @@ do i = 1 to nrow(NN);
    upper95 = MC_list$3;
    if prob < lower95 | prob > upper95 then do;
       run check_test(TestName, prob, MC_est);
-      if max(abs(prob-MC_est)) > 1E-3 then 
+      if abs(prob-MC_est) > 1E-3 then 
          print prob MC_est lower95 upper95;
    end;
    else

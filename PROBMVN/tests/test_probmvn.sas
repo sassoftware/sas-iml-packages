@@ -433,6 +433,7 @@ U_Block = {.I  1  0  1 .I,
             1  3  2  1  0,
            .I .I .I .I .I  };
 N = 5E5;
+tol = 0.001;
 /* use a double loop to test all combinations of lower and upper limits. 
    For each combination, compute the QMC estimate and a 95% CI from MC simulation. 
    If the QMC value is outside the 95% CI, print the limits. */
@@ -443,16 +444,23 @@ do i = 1 to nrow(L_Block);
       prob = probmvn_mod(L, U, R);
       /* Compute the MC estimate; see if the QMC value is in the 95% CI */
       if any(L=. | U=.) then
-         correct_list = MC_PROBMVN_CL(5*N, L, U, R);  /* do extra computations for semi-infinite limits */
+         MC_list = MC_PROBMVN_CL(5*N, L, U, R);  /* do extra computations for semi-infinite limits */
       else 
-         correct_list = MC_PROBMVN_CL(N, L, U, R);
-      correct = correct_list$1;
-      lower95 = correct_list$2;
-      upper95 = correct_list$3;
+         MC_list = MC_PROBMVN_CL(N, L, U, R);
+      MC_est = MC_list$1;
+      lower95 = MC_list$2;
+      upper95 = MC_list$3;
       if prob < lower95 | prob > upper95 then do;
-         run check_test(test_name, prob, correct);
-         if max(abs(prob-correct)) > 0.001 then 
-            print L, U;
+         /* prob not in 95% CI. Before reporting a failure, rerun the problem with more points */
+         MC_list = MC_PROBMVN_CL(5*N, L, U, R);
+         MC_est = MC_list$1;
+         lower95 = MC_list$2;
+         upper95 = MC_list$3;
+         if prob < lower95 | prob > upper95 then do;
+            run check_test(test_name, prob, MC_est);
+            if abs(prob-MC_est) > tol then 
+               print L, U, R, prob MC_est lower95 upper95 (abs(prob-MC_est)) [L="Diff"] tol;
+         end;
       end;
    end;
 end;
@@ -562,7 +570,7 @@ do i = 1 to ncol(dim_vec);
       run check_test(TestName + " (dim=" + char(i,3) + ")", prob, MC_est);
       if abs(prob-MC_est) > tol then 
          print L, mu, U, Sigma, 
-               prob MC_est lower95 upper95 (prob-MC_est)[L='Diff'] tol;
+               prob MC_est lower95 upper95 (prob-MC_est)[L='Diff'] tol, Sigma;
    end;
 end;
 print TestName[L=""] "DONE ---";
@@ -600,7 +608,7 @@ do i = 1 to nrow(NN);
    lower95 = MC_list$2;
    upper95 = MC_list$3;
    run check_test(TestName, prob, MC_est);
-   if max(abs(prob-MC_est)) > tol then 
+   if abs(prob-MC_est) > tol then 
       print prob MC_est lower95 upper95;
 end;
 print BaseTestName[L=""] "--- DONE ---";

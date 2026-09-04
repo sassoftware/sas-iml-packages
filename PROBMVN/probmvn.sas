@@ -183,9 +183,8 @@ start mvn_dist( lower, upper, covar,
    maxpts = 2000*n**3;
    if n < 10 then abseps = 1E-4;
    else abseps = 1E-3;
-   releps = 0.001;
    /* perform numerical integration */
-   run dkbvrc( n-1, 0, maxpts, abseps, releps, error, value );
+   run dkbvrc( n-1, 0, maxpts, abseps, error, value );
 finish mvn_dist;
 
 
@@ -552,8 +551,8 @@ Main Adaptive Integration Loop using Randomized Korobov Rules.
 1. Estimates integral value and error.
 2. Increases number of points or changes prime base if error > tolerance.
 */
-start dkbvrc( ndim, minvls, maxvls, abseps, releps,   abserr, finest );
-
+start dkbvrc( ndim, minvls, maxvls, abseps,   abserr, finest );
+   releps = 100*abseps;
    minsmp = 8;           /* minimum number of random shifts per stage */
 
       /* Korobov lattice primes and generator coefficients (local to QMC driver). 
@@ -644,8 +643,9 @@ start dkbvrc( ndim, minvls, maxvls, abseps, releps,   abserr, finest );
       else 
          abserr = 3*sqrt( varsqr/( 1 + varprd ) );
 
-      /* Check Convergence Criteria */
-      if ( abserr > max( abseps, abs(finest)*releps ) ) then do;
+      /* Check Convergence Criteria. 
+         Converged only if abserr is below BOTH the absolute and relative bounds. */
+      if ( abserr > min( abseps, abs(finest)*releps ) ) then do;
          /* If not converged, increase Prime index (np) or Sample size */
          if ( np < plim ) then
             np = np + 1;
