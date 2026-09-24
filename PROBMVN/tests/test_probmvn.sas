@@ -2,8 +2,7 @@ options ps=32000 nodate nonumber;
 
 proc iml;
 load module=_all_;
-
-/* --- TEST SUITE --- */ 
+print "--- Starting Tests for MULTIVARIATE PROBMVN ---";
 
 /* basic validation test */
 call randseed(12345);
@@ -118,12 +117,12 @@ run check_test(testName, prob, correct);
 /* 6. A kxk equicorrelated matrix with rho=0.5 and b=0.
       Theoretical prob is 1/(k+1) 
 */
-testName = "Test 6: Several equicorrelated matrices (rho=0.5); CDF";
+tName = "Test 6: Several equicorrelated matrices (rho=0.5); CDF";
 kk = {9, 10, 15, 20};
 kk = {9, 10, 15};
 do i=1 to nrow(kk); 
    n = kk[i];
-   print "--- Dimension =" n[L=""] "---";
+   TestName = cat(tName, " (dim=" + char(n,3) + ")");
    v = j(n,1,sqrt(0.5));
    R = 0.5*I(n) + v*v`;
    upper = j(1,n,0);
@@ -413,7 +412,6 @@ end;
    (-Infty, Infty), (-Infty, b), (a, Infty), (a, b) 
    The final test has all variables in (-Infty, Infty) so answer should be 1! */
 test_name = "--- Test 17: 36 Different 5-D Rectangular Regions:";
-print test_name[L=""] "only failures are printed ---";
 R = {1    -0.25  0.15 -0.35 -0.15 ,
     -0.25  1    -0.4   0.55  0.35 ,
      0.15 -0.4   1     0.05 -0.55 ,
@@ -464,7 +462,6 @@ do i = 1 to nrow(L_Block);
       end;
    end;
 end;
-print test_name[L=""] "DONE ---";
 
 /* Test 18: Near-singular equicorrelated covariance matrix.
    This guards numerical stability when rho is very close to 1 (but still PD). */
@@ -523,12 +520,11 @@ prob = probmvn_mod(L, U, Sigma);
    So the probability factors as P(-1<X1<1) * P(0<X2<0.5). */
 correct = probuvn_std(-1, 1) * probuvn_std(0, 0.5);
 run check_test(TestName+" (tol=1E-3)", prob, correct, 1e-3); 
-run check_test(TestName+" (tol=1E-5)", prob, correct, 1e-5);/* will FAIL until we implement the greedy pivot? */
+run check_test(TestName+" (tol=1E-5)", prob, correct, 1e-5);
 
 /* Test 21: Random examples with Monte Carlo validation. 
    This is a sanity check to ensure that the QMC estimate is within the 95% CI of the MC estimate. */
 TestName = "--- Test 21: Random examples with Monte Carlo validation ---";
-print TestName[L=""] "only failures are printed ---";
 /* Generate a random correlation matrix and random limits for each sample */
 /* Note that a Toplitz correlation matrix is always SPD */
 dim_vec = 3:20;
@@ -573,7 +569,6 @@ do i = 1 to ncol(dim_vec);
                prob MC_est lower95 upper95 (prob-MC_est)[L='Diff'] tol, Sigma;
    end;
 end;
-print TestName[L=""] "DONE ---";
 
 
 /* Test 22: A large matrix (N=32).
@@ -596,14 +591,10 @@ do i = 1 to nrow(NN);
    U = j(1, N, 2);
    /* Construct AR(1) Covariance Matrix */
    Sigma = rho##distance(T(1:N), T(1:N), "L1");
-   t0 = time();
    prob = probmvn_mod(L, U, Sigma);
-   t_probmvn = time() - t0;
 
    /* Compute regular Monte Carlo estimate for comparison. Get a 95% confidence interval. */
-   t0 = time();
    MC_list = MC_PROBMVN_CL(1E6, L, U, Sigma);
-   t_MC = time() - t0;
    MC_est  = MC_list$1;
    lower95 = MC_list$2;
    upper95 = MC_list$3;
@@ -611,7 +602,6 @@ do i = 1 to nrow(NN);
    if abs(prob-MC_est) > tol then 
       print prob MC_est lower95 upper95;
 end;
-print BaseTestName[L=""] "--- DONE ---";
 
+print "--- Completed Tests for MULTIVARIATE PROBMVN ---";
 Quit;
-

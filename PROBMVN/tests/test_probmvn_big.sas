@@ -4,7 +4,14 @@ proc iml;
 reset wide;
 load module=_all_;
 
+/* Create a covariance matrix with an AR1 structure */
+start CreateAR1(N, rho);
+   Sigma = rho##distance(T(1:N), T(1:N), "L1"); /* AR(1) */
+   return( Sigma );
+finish;
+
 /* validation test for high dimensions */
+print "--- Starting Tests for PROBMVN with Large Covariance Matrices ---";
 call randseed(12345);
 
 /* Big 1: Test A large matrix.
@@ -34,11 +41,7 @@ do i = 1 to nrow(NN);
    upper95 = MC_list$3;
    if prob < lower95 | prob > upper95 then do;
       run check_test(TestName, prob, MC_est);
-      if abs(prob-MC_est) > 1E-3 then 
-         print prob MC_est lower95 upper95;
    end;
-   else
-      print (cat(TestName, " passes ---"));
 end;
 
 
@@ -110,4 +113,5 @@ U_perm = U_perm[,perm];
 prob = probmvn_mod(L_perm, U_perm, R_perm);
 run check_test(TestName, prob, correct);
 
-
+print "--- Completed Tests for PROBMVN with Large Covariance Matrices ---";
+QUIT;

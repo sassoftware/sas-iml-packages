@@ -1,3 +1,17 @@
+/*************************************************************************************/
+/* Define 1-D and 2-D functions for MVN probability, both CDF and                    */
+/* the probability on rectangular regions.                                           */
+/* FUNCTION     PURPOSE                                                              */
+/* probuvn_mod  Rectangular probability for 1-D normal distribution.                 */ 
+/*              First standardize, then call the probuvn_std function.               */
+/* probuvn_std  Compute the standardized 1-D normal probability.                     */
+/* cdfbvn_mod   Bivariate CDF. First standardize, then call the cdfbvn_std function. */
+/* cdfbvn_std   Compute the standardized bivariate CDF.                              */
+/* probbvn_mod  Bivariate normal probabilities on rectangular domains.               */
+/*              First standardize, then call the probbvn_std function.               */
+/* probbvn_std  Compute the standardized bivariate normal probabilities on           */
+/*              a rectangular domain.                                                */
+/*************************************************************************************/
 proc iml;
 
 /* Rectangular probability for 1-D standard normal distribution.
@@ -32,21 +46,16 @@ start probuvn_std(a,b);
       return 1;
 finish;
 
-/* bivariate normal probabilities on rectangular domains for 
-   X~BVN(mu, Sigma) with upper integration limits U=(U1,U2). 
-   The function standardizes the upper limits U and the covariance 
-   matrix Sigma to get the corresponding standardized values for PROBBNRM.
-   The function uses missing values in U to indicate infinity.
-   .M indicates negative infinity
-   .I indicates positive infinity.
-   L, U and mu are row vectors of length 2. Sigma is a 2x2 covariance matrix.
-*/
-start probbvn_mod(L, U, Sigma, mu=j(1,2,0));
+/* Return the bivariate CDF for MVN(Sigma, mu) at each row of b.
+   Validate the parameters, standardize to correlation scale, and call PROBBNRM */
+start cdfbvn_mod(b, Sigma, mu={0 0});
+   IsValid = mvn_IsValidParmsCDF(b, Sigma, mu);
+   if ^IsValid then
+      return(.);
+   U = Xform_Limits_Cov2Corr(b, Sigma, mu);
    R = cov2corr(Sigma);
-   D = rowvec(sqrt(vecdiag(Sigma)));
-   L_std = (L - mu)/ D;
-   U_std = (U - mu)/ D;
-   return probbvn_std(L_std, U_std, R[1,2]);
+   prob = probbnrm(U[,1], U[,2], R[1,2]);
+   return ( prob );
 finish;
 
 /* Extend the standard bivariate CDF, which is PROBBNRM(a,b, rho), to support an 
@@ -64,6 +73,23 @@ start cdfbvn_std(a,b, rho);
    if missing(b) then 
       return cdf("Normal", a);
    return 1;
+finish;
+
+/* bivariate normal probabilities on rectangular domains for 
+   X~BVN(mu, Sigma) with upper integration limits U=(U1,U2). 
+   The function standardizes the upper limits U and the covariance 
+   matrix Sigma to get the corresponding standardized values for PROBBNRM.
+   The function uses missing values in U to indicate infinity.
+   .M indicates negative infinity
+   .I indicates positive infinity.
+   L, U and mu are row vectors of length 2. Sigma is a 2x2 covariance matrix.
+*/
+start probbvn_mod(L, U, Sigma, mu=j(1,2,0));
+   R = cov2corr(Sigma);
+   D = rowvec(sqrt(vecdiag(Sigma)));
+   L_std = (L - mu)/ D;
+   U_std = (U - mu)/ D;
+   return probbvn_std(L_std, U_std, R[1,2]);
 finish;
 
 /* probabilities on rectangular regions for BVN(0, rho)
@@ -120,7 +146,8 @@ store module=(
 probuvn_mod
 probuvn_std
 probbvn_mod 
-cdfbvn_std
 probbvn_std
+cdfbvn_mod
+cdfbvn_std
 );
 QUIT;

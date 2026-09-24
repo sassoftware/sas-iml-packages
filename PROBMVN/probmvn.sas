@@ -1,9 +1,4 @@
-/* downloaded 25AUG2017 from 
-   https://www.biostat.uni-hannover.de/fileadmin/institut/probmvn.sas
 
-   For an overview, see https://www.biostat.uni-hannover.de/89.html?&L=1
-   For orthant probabilities, see https://www.biostat.uni-hannover.de/91.html?&L=1#c140
-*/
 
 /* SAS/IML program for the calculation of multivariate normal probabilities. 
    The code uses the RANDGEN function for the generation of uniform random variables. 
@@ -30,34 +25,16 @@
 
    Output : ERROR : estimated absolute error, with 99% confidence level 
                   VALUE : estimated integral value
-*/
-/* Example call: 
-   ************* 
-   The statements at the end of the program 
-   N = 5; 
-   LOWER = J(1,N,-2); UPPER = J(1,N,2); 
-   COVAR = I(5);
-   RUN MVN_DIST( LOWER, UPPER, COVAR, ERROR, VALUE ); 
-   PRINT ERROR VALUE; 
 
-   lead to the following output: 
-   ERROR     VALUE
-   0.0000756 0.9030463
+   Originally downloaded (25AUG2017) from 
+   https://www.biostat.uni-hannover.de/fileadmin/institut/probmvn.sas
+
+   For an overview, see https://www.biostat.uni-hannover.de/89.html?&L=1
+   For orthant probabilities, see https://www.biostat.uni-hannover.de/91.html?&L=1#c140
 */
 options nodate ps=32000;
-/* define and STORE univariate, bivariate, and other helper functions */
-/*
-%include "probbvn.sas";
-%include "mvn_validate.sas";
-%include "probmvn_validate.sas";
-*/
-/* assume that we have stored the matrix validation helper functions. When you 
-   run 
-   mvn_validate.sas
-   and
-   probmvn_validate.sas
-   the functions are stored in a library where they can be LOADed by the LOAD MODULE= statement.
-*/
+proc iml;
+load module=_all_;
 /* Define the PROBMVN_MOD function for rectangular bivariate normal probabilities.
    Let X~MVN(mu, Sigma) be a multivariate normal random vector, where
    Sigma is an nxn covariance matrix and mu is a 1xn row vector.
@@ -65,22 +42,21 @@ options nodate ps=32000;
    prob = PROBMVN_MOD(L, U, Sigma<, mu>) 
    returns the probability that X falls within the rectangular region defined by L and U:
    P(L1 < X1 < U1 & ... & Ln < Xn < Un) 
-   where a missing element for L means -Infinity and a missing element for U means +Infinity. */
+   where a missing element for L means -Infinity and a missing element for U means +Infinity.
 
-proc iml;
-load module=_all_;
-
-/* probmvn_mod: Main top-level routine for rectangular multivariate normal probabilities. 
+   probmvn_mod: Main top-level routine for rectangular multivariate normal probabilities. 
    L and U are 1xn row vectors of lower and upper limits, respectively. 
    Sigma is an nxn covariance matrix. mu is an optional 1xn mean vector. 
    The function standardizes the limits and covariance matrix
    then calls PROBMVN_STD, which computes the probability for the 
    standardized problem X~MVN(0,R). 
    The function uses missing values in L and U to indicate infinity. 
-   .M indicates negative infinity.
-   .I indicates positive infinity.
 */
 start probmvn_mod(L, U, Sigma, mu=j(1,ncol(Sigma),0));
+   /* Validate standardized arguments once so downstream routines can assume validity. */
+   isValid = mvn_IsValidParmsProbmvn(L, U, Sigma, mu);
+   if ^isValid then 
+      return( j(nrow(L),1,.) );
    D = rowvec(sqrt(vecdiag(Sigma)));
    L_std = (L - mu)/ D;
    U_std = (U - mu)/ D;
@@ -98,11 +74,6 @@ finish;
 
 /* Define some constants and call mvn_dist for the standardized problem X~MVN(0,R). */
 start probmvn_std(L0, U0, R0);
-   /* Validate standardized arguments once so downstream routines can assume validity. */
-   isValid = IsValidParmsPROBMVN(L0, U0, R0);
-   if ^isValid then 
-      return( j(nrow(L0),1,.) );
-
    /* If all limits are infinite, the probability is 1 by definition. */
    new_params = RemoveInfiniteLimits(L0, U0, R0);
    L = new_params$1;

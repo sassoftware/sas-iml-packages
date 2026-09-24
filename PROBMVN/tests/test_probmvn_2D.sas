@@ -14,7 +14,7 @@ load module = _all_;
 /*==============================*/
 /* 1. 2-D test cases            */
 /*==============================*/
-print "Tests for 2-D PROBNRM and Extra Degenerate Dimensions";
+print "--- Starting Tests for 2-D PROBNRM and Extra Degenerate Dimensions ---";
 
 /* 1a. 2-D finite rectangle, independent variables */
 testName = "Test 1a: 2-D finite rectangle, R=I";
@@ -177,8 +177,8 @@ U = {5  9};
 Sigma = {1 -0.3,
          -0.3 1};
 prob = probmvn_mod(L, U, Sigma);
-clip_L = ClipInterval(L);
-clip_U = ClipInterval(U);
+clip_L = ClipLimit(L);
+clip_U = ClipLimit(U);
 correct = probmvn_mod(clip_L, clip_U, Sigma);
 run check_test(testName, prob, correct, 1E-12);
 
@@ -197,8 +197,8 @@ U = { 4 5};
 Sigma = {1 -0.6,
          -0.6 1};
 prob = probmvn_mod(L, U, Sigma);
-clip_L = ClipInterval(L);
-clip_U = ClipInterval(U);
+clip_L = ClipLimit(L);
+clip_U = ClipLimit(U);
 correct = probmvn_mod(clip_L, clip_U, Sigma);
 run check_test(testName, prob, correct, 1E-12);
 
@@ -225,6 +225,13 @@ run check_test(testName, prob, correct, 1E-12);
 /* Test 5: 2-D Test Cases: All 9 tic-tac-toe regions 
    See https://blogs.sas.com/content/iml/2023/12/04/bivariate-normal-probability-sas.html
 */
+/* Compute bivariate normal probability over rectangular regions,
+   using cdfbvn_std from mvn_Util.sas for finite/infinite limits. */
+
+start ProbBVN(a,b,c,d,rho);
+   return probbvn_std(a || c, b || d, rho);
+finish;
+
 testName = "Test 5: 2-D Quadrant Test";
 call randseed(123);
 rho = 0.4;
@@ -269,10 +276,9 @@ Correct[9] = ProbBVN( b, .P,  d, .P, rho);   /* NE */
 Prob = j(nrow(region), 1, .);
 do i = 1 to nrow(region);
    Prob[i] = probmvn_mod( L[i,], U[i,], R );
-   *      print (region[i])[L='Region'] (L[i,])[L='L'] (U[i,])[L='U'] (Prob[i])[L='p'] (Correct[i])[L='Correct'];
    run check_test(testName, Prob[i], Correct[i], tol);
 end;
 
-
+print "--- Completed Tests for 2-D PROBNRM and Extra Degenerate Dimensions ---";
 quit;
 

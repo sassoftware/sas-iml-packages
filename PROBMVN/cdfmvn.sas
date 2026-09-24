@@ -17,6 +17,7 @@
 */
    
 proc iml;
+
 /* If Sigma is a covariance matrix, then the MVN probability can be computed
    by transforming to the corresponding correlation matrix R.
 
@@ -26,10 +27,21 @@ proc iml;
    Phi_k(b; Sigma, mu) = Phi_k(D^{−1}(b-mu); R)
 */
 start cdfmvn_mod(b, Sigma, mu=repeat(0,1,ncol(Sigma)));
-   IsValid = mvn_IsValidParmsMVN(b, Sigma, mu);
+   IsValid = mvn_IsValidParmsCDF(b, Sigma, mu);
    if ^IsValid then
       return(.);
-   run mvn_StdizeCovToCorr(U, R, b, Sigma, mu);
+   /* TO DO: return error estimate to caller for dim=2 and 3 */
+   if ncol(Sigma) = 2 then do;
+      prob = cdfbvn_mod(b, Sigma, mu); 
+      return(prob);
+   end;
+   if ncol(Sigma) = 3 then do;
+      prob = cdftvn_mod(b, Sigma, mu); 
+      return(prob);
+   end;
+   /* general case for higher dimensions */
+   U = Xform_Limits_Cov2Corr(b, Sigma, mu);
+   R = cov2corr(Sigma);
    if ncol(Sigma) < 10 then
       tol = 1e-4; 
    else
