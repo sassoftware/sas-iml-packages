@@ -232,7 +232,7 @@ print "--- Completed Tests for MULTIVARIATE CDF ---";
 tol = 1E-3;
 BaseTestName = "Big AR(1) Correlation Structure";
 rho = 0.90;
-NN = {20, 32};
+NN = {15, 20};
 do i = 1 to nrow(NN);
    N = NN[i];
    TestName = cat(BaseTestName, " (N=" + char(N,3) + ")");

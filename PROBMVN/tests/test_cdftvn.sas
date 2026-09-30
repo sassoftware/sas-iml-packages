@@ -187,11 +187,15 @@ do i = 1 to nrow(signs);
    R = R0 # S;
    prob = cdfmvn_mod(b, R);
    mc_list = MC_CDF_StdErr(5E5, b, R);
-   mc_est = mc_list[1];
-   stderr = mc_list[2];
+   mc_est = mc_list$1;
+   stderr = mc_list$2;
    /* https://blogs.sas.com/content/iml/2026/09/21/diff-mc-estimates.html */
-   eps = sqrt(tol**2 + stderr**2);
-   run check_test(TestName, prob, mc_est, eps);
+   if abs(prob - mc_est) > tol then do; /* try again with more points */
+      mc_list = MC_CDF_StdErr(1E6, b, R);
+      mc_est = mc_list$1;
+      stderr = mc_list$2;
+   end;
+   run check_test(TestName, prob, mc_est, tol);
 end;
 
 print "--- Completed Tests for TRIVARIATE CDF ---";
