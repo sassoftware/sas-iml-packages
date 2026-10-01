@@ -13,6 +13,7 @@ This method enables you to use libraries of function modules in the IML procedur
 * The **Compgeom** package is supported only in SAS Viya. The package shows how to use the CONVEXHULL, DELAUNAY, and VORONOI subroutines (released in Viya 2024.10) to solve problems in computational geometry. The package contains visualization subroutines that you can run in PROC IML. The routines visualize two-dimensional convex hulls, Delaunay triangulations, and Voronoi diagrams.
 * The **Metalog** package is supported for SAS 9.4 and for SAS Viya. The package supports using the metalog system of distributions.
 * The **MLE** package is supported for SAS 9.4 and for SAS Viya. The package demonstrates how to fit and visualize common univariate probability distributions.
+* The **PROBMVN** package is supported for SAS 9.4 and for SAS Viya. The package provides a library of IML functions that estimate probabilities in rectangular regions for a multivariate normal probability distribution.
 
 ### Prerequisites
 
@@ -20,6 +21,7 @@ This method enables you to use libraries of function modules in the IML procedur
 * The Compgeom package requires SAS Viya 2024.10.
 * The Metalog package works in every release of SAS Viya. It also works in SAS/IML® in SAS 9.4 Maintenance 7 and beyond.
 * The MLE package works in every release of SAS Viya. It also works in SAS/IML® in SAS 9.4 Maintenance 7 and beyond.
+* The PROBMVN package works in every release of SAS Viya. It also works in SAS/IML® in SAS 9.4 Maintenance 7 and beyond.
 
 ## Getting Started
 
@@ -75,6 +77,14 @@ If you want to use the **MLE** package, use the following statements:
 ```sas
 proc iml;
 %include "&repoPath./MLE/MLE_define.sas";
+quit;
+```
+
+If you want to use the **PROBMVN** package, use the following statements:
+
+```sas
+proc iml;
+%include "&repoPath./PROBMVN/PROBMVN_define.sas";
 quit;
 ```
 
