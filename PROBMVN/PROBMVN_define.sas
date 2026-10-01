@@ -4,7 +4,7 @@
 /*For example:
   %let repoPath = u:\gitpp\DEV\sas-iml-packages;
   proc iml;
-  %include "&repoPath\PROBBVN\probmvn_Define.sas";
+  %include "&repoPath\PROBBVN\PROBMVN_define.sas";
   quit;
 
   For Windows vs Linux, you might need to use backslashes instead of forward slashes.

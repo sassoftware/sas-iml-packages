@@ -14,7 +14,7 @@ function and provides examples of each function's output.
 
 ## Main functions
 
-The following high-level functions are designed to be called directly:
+The following high-level functions are designed to be called directly. They are IML functions that mimic the functionality of the CDFMVN and PROBMVN functions in SAS IML in SAS Viya. The documentation for the built-in functions is available in the _SAS IML: Language Reference_.
 
 - **CDFMVN_MOD**: The main function for estimating the CDF of a multivariate normal random variable, 
 X ~ MVN(mu, Sigma), where mu is a k-dimensional row vector, and Sigma is a kxk covariance matrix.
@@ -48,3 +48,7 @@ prob_rect = probmvn_mod(L, U, Sigma);
 print prob_rect;
 QUIT;
 ```
+
+## Acknowledgements
+
+Special thanks to Frank Bretz who shared some of his IML programs. These were modified and enhanced to construct the PROBMVN package.

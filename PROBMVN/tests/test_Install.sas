@@ -4,6 +4,7 @@
 */
 options dlcreatedir;
 %let repoPath = %sysfunc(getoption(WORK))/sas-iml-packages;  
+%let PROBMVN_path = &repoPath/PROBMVN; 
 
 data _null_;
 if fileexist("&repoPath.") then 
@@ -16,5 +17,5 @@ run;
 
 /* Use %INCLUDE to read source code and STORE functions to IML storage library */
 proc iml;
-%include "&repoPath/PROBMVN/PROBMVN_define.sas";  /* one file with all modules */
+%include "&PROBMVN_path/PROBMVN_define.sas";  /* one file with all modules */
 quit;

@@ -19,15 +19,16 @@
    All errors are the responsibility of Rick Wicklin, who completely rewrote the code in 2026
    to modernize it, vectorize it, and make it more modular.
 
-   Input : LOWER : lower integration limits (N-rowvector) 
-           UPPER : upper integration limits (N-rowvector) 
-           COVAR : positive semi-definie covariance matrix (N*N-matrix)  
+   Input : L : lower integration limits (N-rowvector) 
+           U : upper integration limits (N-rowvector) 
+           Sigma : positive semi-definite covariance matrix (N*N matrix)  
 
-   Output : ERROR : estimated absolute error, with 99% confidence level 
-                  VALUE : estimated integral value
+   Output : VALUE : estimated integral value
+            ERROR : estimated absolute error, with 99% confidence level            
 
    Originally downloaded (25AUG2017) from 
    https://www.biostat.uni-hannover.de/fileadmin/institut/probmvn.sas
+   Special thanks to Frank Bretz who shared his old IML code from the mid-2000s.
 
    For an overview, see https://www.biostat.uni-hannover.de/89.html?&L=1
    For orthant probabilities, see https://www.biostat.uni-hannover.de/91.html?&L=1#c140
