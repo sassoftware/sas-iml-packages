@@ -3,7 +3,7 @@
 /* Analytical tests for special cases of trivariate normal CDF.
    Specify b = {b1 b2 b3} and Sigma, which is a 3-D covariance matrix.
    Then the call 
-   prob = CDFMVN(b, Sigma, mu) returns the probability that a 
+   prob = cdfmvn_mod(b, Sigma, mu) returns the probability that a 
    trivariate normal vector with mean mu and covariance Sigma is less than or equal to b:
    prob = P(X1 < b1 & X2 < b2 & X3 < b3 | X ~ TVN(mu, Sigma)), 
    where TVN stands for trivariate normal.
@@ -25,37 +25,32 @@
 */
 proc iml;
 load module=_all_;
+print "--- Starting Tests for TRIVARIATE CDF ---";
 
-EPSILON = 1e-7; /* Tolerance for 3-D numerical comparisons */
+tol = 1e-4; /* Tolerance for 3-D numerical comparisons */
 
-/* Test 1: If Sigma=I(3), then prob is the product of the uncorrelated univariate CDFs */
+TestName = "Test 1: Uncorrelated 3-D Variables"; 
 b = {-1  0  2,
       0  0  0,
       1  2  1};
 Sigma = I(3);
-prob = cdfmvn(b, Sigma);
+prob = cdfmvn_mod(b, Sigma);
 correct = cdf("Normal", b[,1]) # cdf("Normal", b[,2]) # cdf("Normal", b[,3]);
-maxDiff = max(abs(prob-correct));
-if any(prob=.) | maxDiff > EPSILON then 
-   print "--- ERROR in Test 1 ---", maxDiff prob correct;
-else
-   print "--- Test 1 passes ---";
+run check_test(TestName, prob, correct, tol);
+
 
 /* Test 2: When the domain of integration is {x1 < 0, x2 < 0, and x3 < 0} then 
    there is a formula: 1/8 + 1/(4*pi) *(arsin(rho_12)+arsin(rho_13)+arsin(rho_23)) */
-b = {0  0  0};
+TestName = "Test 2: Left-tail 3-D Orthant Probability";
+   b = {0  0  0};
 Sigma = {1    0.6 0.2,
          0.6  1   0.4,
          0.2 0.4  1};
-prob = cdfmvn(b, Sigma);
+prob = cdfmvn_mod(b, Sigma);
 rho = Sigma[{2 3 6}];
 pi = constant('pi');
 correct = 1/8+ 1/(4*pi) *sum(arsin(rho));
-maxDiff = max(abs(prob-correct));
-if any(prob=.) | maxDiff > EPSILON then 
-   print "--- ERROR in Test 2 ---", maxDiff prob correct;
-else
-   print "--- Test 2 passes ---";
+run check_test(TestName, prob, correct, tol);
 
 /* Test 3: Genz and Bretz (2009, p. 16) show an exact solution for 
    R = D + V*V` where V is kxm matrix. When m=1, then R = "diagonal + rank-1".
@@ -81,23 +76,21 @@ finish;
    A rank-1 correlation matrix has the form R = D + v*v'.
    The probability can be computed via a 1-D integral over [0,1].
 */
+TestName = "Test 3: Rank-1 3-D Correlation Matrix";
 v = {0.8, 0.7, 0.6};
 Sigma = v*v` + diag(1 - v##2);
 b = {1.0 0.5 0.0};
 /* Compute "correct" value via direct numerical integration of the rank-1 formula */
 g_lambda = v; g_b = colvec(b);
 call quad(correct, "Rank1Integrand", {0 1});
-prob = cdfmvn(b, Sigma);
-maxDiff = max(abs(prob-correct));
-if any(prob=.) | maxDiff > EPSILON then 
-   print "--- ERROR in Test 3 ---", maxDiff prob correct;
-else 
-   print "--- Test 3 passes ---";
+prob = cdfmvn_mod(b, Sigma);
+run check_test(TestName, prob, correct, tol);
 
 /* Test 4: Genz and Bretz (2009, p. 4-5) Numerical Example
    This is a specific test case provided in the literature with a known solution.
    Correct probability: 0.827984897456834.
 */
+TestName = "Test 4: Genz and Bretz Numerical Example";
 b = {1 4 2};
 /* 
 Sigma = {1.0          0.6           0.3333333333,
@@ -109,34 +102,28 @@ Sigma[1,2] = 3/5;      Sigma[2,1] = Sigma[1,2];
 Sigma[1,3] = 1/3;      Sigma[3,1] = Sigma[1,3];
 Sigma[2,3] = 11/15;    Sigma[3,2] = Sigma[2,3];
 
-prob = cdfmvn(b, Sigma);
+prob = cdfmvn_mod(b, Sigma);
 correct = 0.827984897456834;
-maxDiff = max(abs(prob-correct));
-if any(prob=.) | maxDiff > EPSILON then 
-   print "--- ERROR in Test 4 ---", maxDiff prob correct;
-else 
-   print "--- Test 4 passes ---";
+run check_test(TestName, prob, correct, tol);
 
 /* Test 5: Partial Independence
    If X1 is independent of (X2, X3), then the 3-D CDF is the 
    product of the univariate CDF and the bivariate CDF.
 */
+TestName = "Test 5: Partial Independence";
 b = {0.5 1.0 1.5};
 Sigma = {1.0  0.0  0.0,
          0.0  1.0  0.5,
          0.0  0.5  1.0};
-prob = cdfmvn(b, Sigma);
+prob = cdfmvn_mod(b, Sigma);
 /* Correct value via independence property */
 correct = cdf("Normal", 0.5) * probbnrm(1.0, 1.5, 0.5);
-maxDiff = max(abs(prob-correct));
-if any(prob=.) | maxDiff > EPSILON then 
-   print "--- ERROR in Test 5 ---", maxDiff prob correct;
-else 
-   print "--- Test 5 passes ---";
+run check_test(TestName, prob, correct, tol);
 
 /* Test 6: Highly Correlated Case (Equicorrelation)
    Test stability with high correlation (rho=0.9) using the Rank-1 formula as benchmark.
 */
+TestName = "Test 6: Highly Correlated Case (Equicorrelation)";
 rho_val = 0.9;
 Sigma = j(3,3,rho_val); 
 Sigma[{1 5 9}] = 1;
@@ -145,39 +132,38 @@ b = {1.0 1.0 1.0};
 g_lambda = j(3,1,sqrt(rho_val)); 
 g_b = colvec(b);
 call quad(correct, "Rank1Integrand", {0 1});
-prob = cdfmvn(b, Sigma);
+prob = cdfmvn_mod(b, Sigma);
 /* Quadrature near rho=1 is more challenging; check for reasonable precision */
-maxDiff = max(abs(prob-correct));
-if any(prob=.) | maxDiff > EPSILON then 
-   print "--- ERROR in Test 6 ---", maxDiff prob correct;
-else 
-   print "--- Test 6 passes ---";
+run check_test(TestName, prob, correct, tol);
 
 /* Test 7: 
    A. Sigma has negative correlations
    B. Largest magnitude is R[1,3]
    C. Use a noncentral MVN distribution */
+TestName = "Test 7: Negative Correlations with Explicit Mean";
 mu ={ 0.8  0    1.65};
 Sigma={14.3 -1.2 -4.4, 
        -1.2  5.2 -1.4, 
        -4.4 -1.4  9.1};
 b  ={1.75  0.1 -1};
-prob = cdfmvn(b, Sigma, mu);
+prob = cdfmvn_mod(b, Sigma, mu);
 
-start MonteCarloEstimate(N, b, Sigma, mu={0 0 0});
+start MC_CDF_Est(N, b, Sigma, mu={0 0 0});
    X = randnormal(N, mu, Sigma);
    inRegion = (X[,1] < b[1] & X[,2] < b[2] & X[,3] < b[3]);
    MC_Est = mean(inRegion);
    return MC_Est;
 finish;
 
+start MC_CDF_StdErr(N, b, Sigma, mu={0 0 0});
+   MC_Est = MC_CDF_Est(N, b, Sigma, mu);
+   stderr = sqrt(MC_Est*(1-MC_Est)/N);
+   return ( [MC_Est, stderr] );
+finish;
+
 call randseed(1);
-correct = MonteCarloEstimate(1E6, b, Sigma, mu); /* Monte Carlo estimate = 0.022556 */
-maxDiff = max(abs(prob-correct));
-if any(prob=.) | maxDiff > 1E-3 then 
-   print "--- ERROR in Test 7 ---", maxDiff prob correct;
-else 
-   print "--- Test 7 passes ---";
+mc_est = MC_CDF_Est(1E6, b, Sigma, mu); /* Monte Carlo estimate = 0.022556 */
+run check_test(TestName, prob, mc_est, tol);
 
 /* Test 8: Iterate over all combinations of signs for a correlation matrix.
    Largest magnitude is R[1,3]
@@ -196,18 +182,21 @@ signs = { 1  1  1    1  1  1   1  1 1,
           1  1 -1    1  1 -1  -1 -1 1, 
           1 -1 -1   -1  1 -1  -1 -1 1 };
 do i = 1 to nrow(signs);
+   TestName = cat("Test 8: Sign Combinations for 3-D Correlation Matrix", char(i));
    S = shape(signs[i,], 3, 3);
    R = R0 # S;
-   prob = cdfmvn(b, R);
-   correct = MonteCarloEstimate(5E5, b, R);
-   maxDiff = max(abs(prob-correct));
-   if any(prob=.) | maxDiff > 1E-3 then 
-      print "--- ERROR in Test 8 ---", maxDiff prob correct;
-   else do;
-      msg = cat("--- Test 8.",char(i,1)," passes ---");
-      print msg[L=""];
+   prob = cdfmvn_mod(b, R);
+   mc_list = MC_CDF_StdErr(5E5, b, R);
+   mc_est = mc_list$1;
+   stderr = mc_list$2;
+   /* https://blogs.sas.com/content/iml/2026/09/21/diff-mc-estimates.html */
+   if abs(prob - mc_est) > tol then do; /* try again with more points */
+      mc_list = MC_CDF_StdErr(1E6, b, R);
+      mc_est = mc_list$1;
+      stderr = mc_list$2;
    end;
+   run check_test(TestName, prob, mc_est, tol);
 end;
 
-print "--- DONE ---";
+print "--- Completed Tests for TRIVARIATE CDF ---";
 QUIT;

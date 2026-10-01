@@ -16,5 +16,5 @@ run;
 
 /* Use %INCLUDE to read source code and STORE functions to IML storage library */
 proc iml;
-%include "&repoPath/PROBMVN/cdfmvn_Define.sas";  /* one file with all modules */
+%include "&repoPath/PROBMVN/probmvn_Define.sas";  /* one file with all modules */
 quit;

@@ -16,11 +16,18 @@ function and provides examples of each function's output.
 
 The following high-level functions are designed to be called directly:
 
-- **CDFMVN**: The main function for estimating the CDF of a multivariate normal random variable, 
-X ~ MVN(mu, Sigma), where mu is a k-dimensional row vector and Sigma is a kxk covariance matrix.
-If b = (b_1, b_2, ..., b_k) is the upper limit of integration, the function returns the probability that the random variable is in the left-tailed region {X_1 < b_1 & X_2 < b_2 & ... & X_k < b_k}.
+- **CDFMVN_MOD**: The main function for estimating the CDF of a multivariate normal random variable, 
+X ~ MVN(mu, Sigma), where mu is a k-dimensional row vector, and Sigma is a kxk covariance matrix.
+If U = (U_1, U_2, ..., U_k) is the upper limit of integration, the function returns the probability that the random variable is in the left-tailed region {X_1 < U_1 & X_2 < U_2 & ... & X_k < U_k}.
+In this implementation, 2 <= k <= 20.
 
-In future releases, the package will support additional functions for probabilities of muiltivariate distributions.
+- **PROBMVN_MOD**: The main function for estimating the probability of a multivariate normal random variable on a rectangular domain. The random variable is 
+X ~ MVN(mu, Sigma), where mu is a k-dimensional row vector, and Sigma is a kxk covariance matrix.
+If L = (L_1, L_2, ..., L_k) is the lower limit of integration, and
+U = (U_1, U_2, ..., U_k) is the upper limit of integration, 
+the function returns the probability that the random variable is in the rectangular region {L_1 < X_1 < U_1 & L_2 < X_2 < U_2 & ... & L_k < X_k < U_k}. If you want a lower limit to be -Infinity, use the special missing value .M in the L vector. If you want an upper limit to be +Infinity, 
+use the special missing value .I in the U vector. 
+In this implementation, 2 <= k <= 100.
 
 ## Example
 
@@ -29,11 +36,15 @@ proc iml;
 load module=_all_;     /* load the library */
 
 /* Example 1: Define limits and covariance matrix */
-b = {1 4 2};
+U = {1 4 2};
 Sigma = {1.0 0.6 0.3333333333,
          0.6 1.0 0.7333333333,
          0.3333333333 0.7333333333 1.0 };
-prob = cdfmvn(b, Sigma);
-print prob;
+CDF = cdfmvn_mod(U, Sigma);
+print CDF;
+
+L = {-1 0 -2};
+prob_rect = probmvn_mod(L, U, Sigma);
+print prob_rect;
 QUIT;
 ```

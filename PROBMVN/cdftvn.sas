@@ -1,10 +1,8 @@
-/* ------------------------------------------------------------------
-   Main Function: cdftvn_mod
-   ------------------------------------------------------------------ */
+/*************************************************************************************/
 /* Return the trivariate CDF for MVN(Sigma, mu) at each row of b.
-   Validate the parameters, standardize to correlation scale, and call cdftvn_impl */
+   Validate the parameters, standardize to correlation scale, and call cdftvn_impl.
 
-   /* Translation of the Alan Genz MVN probability algorithm from MATLAB to SAS IML.
+   Translation of the Alan Genz MVN probability algorithm from MATLAB to SAS IML.
    See the original file multinorm_CDF.m for comments and references.
 
    Implements equation (14) in Section 3.2 of Genz (2004), integrating each
@@ -13,21 +11,26 @@
 
    Genz, A. (2004). "Numerical computation of rectangular bivariate and trivariate 
    normal and t probabilities." Statistics and computing, 14(3), 251-260.
-   **************************************/
-proc iml;
-load module=_all_;
+*/
+/*************************************************************************************/
 
+proc iml;
 /* Return the trivariate CDF for MVN(Sigma, mu) at each row of b.
-   Validate the parameters, standardize to correlation scale, and call cdftvn_impl */
+   Validate the parameters, standardize to correlation scale, and call cdftvn_impl 
+   TO DO: Support multiple rows of b
+          Return error estimate = 1E-6
+   */
 start cdftvn_mod(b, Sigma, mu={0 0 0});
-   IsValid = mvn_IsValidParmsMVN(b, Sigma, mu);
+   IsValid = mvn_IsValidParmsCDF(b, Sigma, mu);
    if ^IsValid then
       return(.);
-   run mvn_StdizeCovToCorr(U, R, b, Sigma, mu);
+   U = Xform_Limits_Cov2Corr(b, Sigma, mu);
+   R = cov2corr(Sigma);
    tol = 1e-6; /* tolerance for numerical integration */
    cdf = cdftvn_impl(U, R, tol);
    return ( cdf );
 finish;
+
 /* Integrand function using vectorized globals */
 start tvn_Integrand(theta) 
       GLOBAL(g_b, g_rho_vec);
@@ -139,23 +142,17 @@ finish;
 /* the argumente have been validated and scaled. Return CDF for TVN(b; R, mu=0) */
 start cdftvn_impl(b, R, tol);
    rho_vec = R[{2 3 6}]; /* Initial {rho_21, rho_31, rho_32} */
-   
    /* Use a copy of b to avoid modifying the caller's matrix */
    b_perm = b; 
    run tvn_PermuteCorr(b_perm, rho_vec);
-   
    /* Clip limits after permutation for numerical stability */
-   b_perm = Clip(b_perm, {-10, 10});
-
+   b_perm = ClipLimit(b_perm);
    /* Term 1: Standard bivariate normal calculation */
    p1 = cdf("Normal", b_perm[,1]) # probbnrm(b_perm[,2], b_perm[,3], rho_vec[3]);
-
    /* Term 2: Integration for rho_21 in the permuted set */
    p2 = tvn_ComputeTerm(b_perm, rho_vec, tol);
-
     /* Term 3: Integration for rho_31 in the permuted set */
    p3 = tvn_ComputeTerm(b_perm[,{1 3 2}], rho_vec[{2 1 3}], tol);
-
    pi = constant("pi");
    p = p1 + (p2 + p3) / (2 * pi);
    return (p);
