@@ -19,7 +19,7 @@
 /* Alternatively, you can use the DLGCDIR to set the current working directory,
    and then refer to the files without specifying a path. Here is a Linux example:
 
-%let rc = %sysfunc(dlgcdir('u:/gitpp/DEV/sas-iml-packages/PROBMVN'));
+%let rc = %sysfunc(dlgcdir('U:\gitpp\DEV\sas-iml-packages\PROBMVN'));
 %include "probmvn_Util.sas";
 %include "probbvn.sas";
 %include "cdftvn.sas";

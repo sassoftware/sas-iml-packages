@@ -82,6 +82,21 @@ start mvn_IsValidParms(Sigma, mu);
    return( 1 );
 finish;
 
+/* opt[1] is QMC absolute error tolerance; opt[2] is binary flag for error estimate. */
+start mvn_IsValidParmsOpt(opt);
+   if type(opt) ^= 'N' then do;
+      run ErrorToLog( "The opt parameter must be numeric." );
+      return( 0 );
+   end;
+   if opt[1] ^= . then do;
+      if opt[1] < 1E-5 | opt[1] > 1E-2 then do;
+         run ErrorToLog( "The first element of opt must be missing or in the range [1E-5, 1E-2]." );
+         return( 0 );
+      end;
+   end;
+   return( 1 );
+finish;
+
 /* dim(U)=dim(Sigma), U is not missing, size for CDFMVN.*/
 start mvn_IsValidParmsCDF(U, Sigma, mu);
    isValid = mvn_IsValidParms(Sigma, mu);
@@ -105,6 +120,10 @@ finish;
 start mvn_IsValidParmsProbmvn(L, U, Sigma, mu);
    isValid = mvn_IsValidParms(Sigma, mu);
    if ^isValid then return( 0 );
+   if nrow(L) > 1 | nrow(U) > 1 then do;
+      run ErrorToLog( "The PROBMVN package does not support multiple limits of integration." );
+      return( 0 );
+   end;
    if ncol(L) ^= ncol(Sigma) then do;
       run ErrorToLog( "The L and Sigma parameters are not compatable dimensions.");
       return( 0 );
@@ -236,6 +255,7 @@ store module=(
    mvn_IsSPD 
    mvn_IsCorr 
    mvn_IsValidParms
+   mvn_IsValidParmsOpt
    mvn_IsValidParmsCDF 
    mvn_IsValidParmsProbmvn 
    ClipLimit

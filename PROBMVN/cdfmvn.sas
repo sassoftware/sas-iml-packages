@@ -26,38 +26,49 @@ proc iml;
    by Sigma = D*R*D. Then the transformation x = Dy reduces the general MVN probability to
    Phi_k(b; Sigma, mu) = Phi_k(D^{−1}(b-mu); R)
 */
-start cdfmvn_mod(b, Sigma, mu=repeat(0,1,ncol(Sigma)));
+start cdfmvn_mod(b, Sigma, mu=repeat(0,1,ncol(Sigma)), opt={.,.});
    IsValid = mvn_IsValidParmsCDF(b, Sigma, mu);
    if ^IsValid then
       return(.);
-   /* TO DO: return error estimate to caller for dim=2 and 3 */
+   IsValid = mvn_IsValidParmsOpt(opt);
+   if ^IsValid then
+      return(.);
+   optn = opt;
+   if optn[1] = . then optn[1] = choose(ncol(Sigma) < 10, 1E-4, 1E-3);
+   if optn[2] = . then optn[2] = 0;
    if ncol(Sigma) = 2 then do;
       prob = cdfbvn_mod(b, Sigma, mu); 
-      return(prob);
+      return(prob);  /* ignore option for 2-D case, which is analytic */
    end;
    if ncol(Sigma) = 3 then do;
       prob = cdftvn_mod(b, Sigma, mu); 
-      return(prob);
+      return(prob); /* ignore option for 3-D CDF, which is analytic */
    end;
    /* general case for higher dimensions */
    U = Xform_Limits_Cov2Corr(b, Sigma, mu);
    R = cov2corr(Sigma);
-   if ncol(Sigma) < 10 then
-      tol = 1e-4; 
-   else
-      tol = 1e-3;
+   /* Special case: if the correlation matrix is diagonal, then the probability is the product of univariate probabilities. */
+   isDiagonal = MatrixIsDiagonal(R);
    /* use an outer loop over the rows of b matrix, which allows us to compute 
       probabilities for different limits of integration. This is not optimially 
       efficient, since does not re-use the lattice points across different rows of b. */
   prob = j(nrow(b),1,.);
   error = j(nrow(b),1,.);
   do row = 1 to nrow(b);
-     U_row = U[row,];
-     run cdfmvn_LR(p, e, R, U_row, tol);  
-     prob[row] = p;
-     error[row] = e;
+      U_row = U[row,];
+      if (isDiagonal) then do;
+         p = 1; e = 0;
+         do j = 1 to ncol(U_row);  p = p * probuvn_std(.M, U_row[j]);   end;
+      end;
+      else
+         run cdfmvn_LR(p, e, R, U_row, optn[1]);
+      prob[row] = p;
+      error[row] = e;
   end;
-  return prob;    /* currently, we don't return the error estimates */
+  if optn[2]=0 then
+     return(prob);
+  else
+     return(prob || error);
 finish;
 
 start cdfmvn_LR(prob, error,       /* output values: probability and error estimate */
