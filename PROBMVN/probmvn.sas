@@ -1,5 +1,3 @@
-
-
 /* SAS/IML program for the calculation of multivariate normal probabilities. 
    The code uses the RANDGEN function for the generation of uniform random variables. 
    The program evaluates the multivariate normal integral by applying randomised 
@@ -26,7 +24,7 @@
    Output : VALUE : estimated integral value
             ERROR : estimated absolute error, with 99% confidence level            
 
-   ACKNOWLEGEMENTS:
+   ACKNOWLEDGEMENTS:
    Originally downloaded (25AUG2017) from 
    https://www.biostat.uni-hannover.de/fileadmin/institut/probmvn.sas
    Special thanks to Frank Bretz who shared his old IML code from the mid-2000s.

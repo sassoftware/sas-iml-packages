@@ -9,10 +9,9 @@ IML tests that call the PROBMVN for the following situations:
 options ps=32000 nodate nonumber;
 
 /* Tabulate how the built-in functions CDFMVN and PROBMVN work:
-   TESTNAME      Function  dim=2        dim=3         R=diag(5)    General dim>3
-   Invalid Opt   CDFMVN    Ignore opt   Ignore opt    ERROR        ERROR
-                 PROBMVN   Ignore opt   ERROR         ERROR        ERROR
+   Invalid Opt   CDFMVN/PROBMVN return a missing value.
 
+   TESTNAME      Function  dim=2        dim=3         R=diag(5)    General dim>3
    opt={.,1}     CDFMVN    NO err est;  NO err est;   err est=0;   YES err est
                  PROBMVN   NO err est;  YES err est;  err est=0;   YES err est
 */
@@ -64,10 +63,16 @@ opt = {1,.};
 testName = "Test 1: Invalid Option: opt={1,.}";
 cdf = cdfmvn_mod (U2, R2, , opt);
 if cdf ^= . then
-   print "CDFMVN_MOD did not catch an invalid option.";
+   print "CDFMVN_MOD did not catch an invalid option (dim=2).";
 prob = probmvn_mod(L2, U2, R2, , opt);
 if prob ^= . then
-   print "PROBMVN_MOD did not catch an invalid option.";
+   print "PROBMVN_MOD did not catch an invalid option (dim=2).";
+cdf = cdfmvn_mod (U5, R5, , opt);
+if cdf ^= . then
+   print "CDFMVN_MOD did not catch an invalid option (dim=5).";
+prob = probmvn_mod(L5, U5, R5, , opt);
+if prob ^= . then
+   print "PROBMVN_MOD did not catch an invalid option (dim=5).";
 
 /* RETURN ERROR ESTIMATE FOR LARGE-ENOUGH PROBLEM SIZES */
 opt = {.,1};
