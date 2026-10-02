@@ -1,5 +1,3 @@
-
-
 /* SAS/IML program for the calculation of multivariate normal probabilities. 
    The code uses the RANDGEN function for the generation of uniform random variables. 
    The program evaluates the multivariate normal integral by applying randomised 
@@ -26,11 +24,11 @@
    Output : VALUE : estimated integral value
             ERROR : estimated absolute error, with 99% confidence level            
 
+   ACKNOWLEDGEMENTS:
    Originally downloaded (25AUG2017) from 
    https://www.biostat.uni-hannover.de/fileadmin/institut/probmvn.sas
    Special thanks to Frank Bretz who shared his old IML code from the mid-2000s.
-
-   For an overview, see https://www.biostat.uni-hannover.de/89.html?&L=1
+   For an overview of the computations, see https://www.biostat.uni-hannover.de/89.html?&L=1
    For orthant probabilities, see https://www.biostat.uni-hannover.de/91.html?&L=1#c140
 */
 options nodate ps=32000;
@@ -53,11 +51,17 @@ load module=_all_;
    standardized problem X~MVN(0,R). 
    The function uses missing values in L and U to indicate infinity. 
 */
-start probmvn_mod(L, U, Sigma, mu=j(1,ncol(Sigma),0));
+start probmvn_mod(L, U, Sigma, mu=j(1,ncol(Sigma),0), opt={.,.});
    /* Validate standardized arguments once so downstream routines can assume validity. */
    isValid = mvn_IsValidParmsProbmvn(L, U, Sigma, mu);
    if ^isValid then 
       return( j(nrow(L),1,.) );
+   isValid = mvn_IsValidParmsOpt(opt);
+   if ^isValid then
+      return( j(nrow(L),1,.) );
+   optn = opt;
+   if optn[1] = . then optn[1] = choose(ncol(Sigma) < 10, 1E-4, 1E-3);
+   if optn[2] = . then optn[2] = 0;
    D = rowvec(sqrt(vecdiag(Sigma)));
    L_std = (L - mu)/ D;
    U_std = (U - mu)/ D;
@@ -70,11 +74,11 @@ start probmvn_mod(L, U, Sigma, mu=j(1,ncol(Sigma),0));
       This value is chosen because CDF("Normal", delta) ~ constant("maceps") */
    idx = loc(L_std< -delta); if ncol(idx)>0 then L_std[idx] = .M;
    idx = loc(U_std>  delta); if ncol(idx)>0 then U_std[idx] = .I;
-   return probmvn_std(L_std, U_std, R); /* Note: From here on, we deal only with correlation matrices */
+   return probmvn_std(L_std, U_std, R, optn); /* Note: From here on, we deal only with correlation matrices */
 finish;
 
 /* Define some constants and call mvn_dist for the standardized problem X~MVN(0,R). */
-start probmvn_std(L0, U0, R0);
+start probmvn_std(L0, U0, R0, optn);
    /* If all limits are infinite, the probability is 1 by definition. */
    new_params = RemoveInfiniteLimits(L0, U0, R0);
    L = new_params$1;
@@ -82,26 +86,28 @@ start probmvn_std(L0, U0, R0);
    R = new_params$3;
    /* if the effective dimensions are 0, 1, or 2, solve the problem exactly */
    if ncol(L) = 0 then
-      return(1);     /* If all limits are infinite, the probability is 1 by definition. */
-   if ncol(L) = 1 then 
+      value = 1;    /* If all limits are infinite, the probability is 1 by definition. */
+   else if ncol(L) = 1 then 
       value = probuvn_std(L, U);
    else if ncol(L)=2 then 
       value = probbvn_std(L, U, R[1,2]);
    if ncol(L) <= 2 then
-      return(value);
+      return(value); /* return early for 0, 1, or 2 effective dimensions; ignore optional err est */
 
    /* Special case: if the correlation matrix is diagonal, then the probability is the product of univariate probabilities. */
    isDiagonal = MatrixIsDiagonal(R);
    if (isDiagonal) then do;
-      value = 1;
+      value = 1;  error = 0;
       do i = 1 to ncol(L);
          value = value * probuvn_std(L[i], U[i]);
       end;
-      return(value);
    end;
-   run mvn_dist(L, U, R,
-                   error, value );
-   return(value);
+   else 
+      run mvn_dist(L, U, R, optn, error, value );
+   if optn[2]=0 then
+      return(value);
+   else
+      return(value || error);
 finish;
 
 /* Return 1 if M is diagonal, else return 0. */
@@ -144,7 +150,7 @@ Output Arguments:
 - error: output scalar for error estimate
 - value: output scalar for probability value estimate
 */
-start mvn_dist( lower, upper, covar, 
+start mvn_dist( lower, upper, covar, optn,
                 error, value );
    /* Phase 1: Setup, Pivoting, and Cholesky Factorization.
                If all of the checks pass, proceed to numerical integration
@@ -153,8 +159,7 @@ start mvn_dist( lower, upper, covar,
 
    n = ncol(covar);
    maxpts = 2000*n**3;
-   if n < 10 then abseps = 1E-4;
-   else abseps = 1E-3;
+   abseps = optn[1];
    /* perform numerical integration */
    run dkbvrc( n-1, 0, maxpts, abseps, error, value );
 finish mvn_dist;
