@@ -1,0 +1,11 @@
+%include "QMC/HandbookMC_IML/quasimc/tests/test_nbe.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_vdc.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_halton.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_hammersley.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_faure.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_sobol.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_sobmat.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_cbe.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_korobov.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_extkorobov.sas";
+%include "QMC/HandbookMC_IML/quasimc/tests/test_convertbase.sas";
