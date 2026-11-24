@@ -1,9 +1,10 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/nbe.sas";
-%include "QMC/HandbookMC_IML/quasimc/vdc.sas";
-%include "QMC/HandbookMC_IML/quasimc/korobov.sas";
-%include "QMC/HandbookMC_IML/quasimc/extkorobov.sas";
+%include "check_test.sas";
+%include "../convertbase.sas";
+%include "../nbe.sas";
+%include "../vdc.sas";
+%include "../korobov.sas";
+%include "../extkorobov.sas";
 
 points = extkorobov(3, 3, 8);
 correct = {0 0 0,

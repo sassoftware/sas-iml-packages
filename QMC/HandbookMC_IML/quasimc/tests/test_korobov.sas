@@ -1,6 +1,6 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/korobov.sas";
+%include "check_test.sas";
+%include "../korobov.sas";
 
 points = korobov(2, 3, 5);
 correct = {1 2 4,

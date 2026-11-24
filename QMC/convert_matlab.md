@@ -7,47 +7,113 @@
   Initial translations follow the source loops; subsequent vectorization may
   replace those loops with equivalent matrix operations.
 - Each source file defines its IML module and stores it with `store module=(...)`.
-- Standalone tests live in `HandbookMC_IML/quasimc/tests` and share `check_test`.
+- Individual tests live in `HandbookMC_IML/quasimc/tests` and share `check_test`.
   Successful checks are silent; failures print the test name and both results.
-- Run tests from the repository root so their relative `%include` paths resolve.
+- Run tests from `HandbookMC_IML/quasimc/tests` so their relative `%include`
+  paths resolve. Include local test files directly and implementation files
+  through `../`.
 - PROBMVN provides the eventual package model: separate implementation files,
   a definition/include file, an installation script, and a `tests` directory.
   This first pass adds draft modules and tests, not a released package installer.
 
-## Running the Tests
+### IML Indexing Rule
 
-In SAS, set the working directory to the repository root, then submit:
+In IML, a linear subscript such as `x[Idx]` **always returns a column vector**,
+even when `x` is a row vector. To select columns of a row vector while keeping
+the result a row vector, use `x[ , Idx]`.
+
+This resolved the difficult coefficient-shape bug in `sobmat`:
 
 ```sas
-%include "QMC/HandbookMC_IML/quasimc/tests/test_all.sas";
+coeffs = coeffs[, 2:ncol(coeffs)];
 ```
 
-Each individual `test_FuncName.sas` is also standalone: it opens `PROC IML`,
-includes the required module definitions and test helper, performs its checks,
-and quits. No package installation is required. Each source file stores its
-module in the current IML storage library. Successful assertions are silent;
-failures print `--- test name --- FAILS ---` and the actual and expected results.
+The former linear selection changed the orientation, making the following
+`degree = ncol(coeffs)` incorrect. Preserve explicit two-dimensional subscripts
+where later calculations depend on row or column shape.
 
-The current `test_halton.sas` also uses `load module=_all_;`. Store the
-modules in `convertbase.sas`, including `FirstPrimes`, in the same IML storage
-library before running that test.
+## Running the Tests
+
+Set the SAS working directory to `QMC/HandbookMC_IML/quasimc/tests`. The tests
+include `check_test.sas` locally and implementation files from the parent
+directory, for example `../convertbase.sas`. Run the aggregate test file with:
+
+```sas
+%include "test_all.sas";
+```
+
+No package installation is required. The eight sequence/conversion tests that
+depend on helpers from `convertbase.sas` now include that file explicitly before
+their dependent module definitions. Halton and Hammersley still load stored
+modules; the broader clean-session setup remains under REVIEW below. The source
+files and `check_test.sas` store their modules in the current IML storage library.
+
+Successful `check_test` assertions are silent; failures print
+`--- test name --- FAILS ---`, the maximum difference, and the computed and
+expected results. Expected missing returns are tested through missing-value
+masks because the helper treats a missing computed value as failure.
+
+**REVIEW:** Confirm a reproducible clean-session setup and dependency order for
+`test_all.sas`. It currently includes `test_convertbase.sas` last, although
+earlier tests require its utility modules. Individual successful runs do not
+establish that the unchanged aggregate file works in a fresh session.
 
 ## Progress
 
-| Order | MATLAB Source | IML Module | Status |
-| --- | --- | --- | --- |
-| 1 | `nbe.m` | `nbe.sas` | Translated; tests written, SAS execution complete | NOT USED
-| 2 | `vdc.m` | `vdc.sas` | Vectorized; `vdc_orig` retained for comparison, SAS execution complete | DONE
-| 3 | `halton.m` | `halton.sas` | Translated; tests written, SAS execution complete | DONE
-| 4 | `hammersley.m` | `hammersley.sas` | Translated; tests written, SAS execution complete | DONE
-| 5 | `faure.m` | `faure.sas` | Translated; tests written, SAS execution completed | DONE
-| 6 | `sobol.m` | `sobol.sas` | Translated; tests written, SAS execution pending |
-| 7 | `sobmat.m` | `sobmat.sas` | Translated; tests written, SAS execution pending |
-| 8 | `cbe.m` | `cbe.sas` | Translated; tests written, SAS execution pending |
-| 9 | `korobov.m` | `korobov.sas` | Translated; tests written, SAS execution pending |
-| 10 | `extkorobov.m` | `extkorobov.sas` | Translated; tests written, SAS execution pending |
+Status reconciled on **2026-11-24** from all eleven SAS implementation files,
+the commit history, and the user's report that the relevant tests for the
+modified functions have been run successfully in SAS. These are user-confirmed
+runs, not SAS executions performed by the assistant in VS Code.
 
-## Recent Updates (2026-10-30)
+| Order | MATLAB Source | IML Module | Current State | SAS Validation |
+| --- | --- | --- | --- | --- |
+| 0 | utilities | `convertbase.sas` | helper functions; bounded integer policy retained | complete |
+| 1 | `nbe.m` | `nbe.sas` | NOT USED by the active sequence implementations; retained utility | complete |
+| 2 | `vdc.m` | `vdc.sas` | DONE; vectorized over all point indices | complete |
+| 3 | `halton.m` | `halton.sas` | DONE; vectorized VDC per base | complete |
+| 4 | `hammersley.m` | `hammersley.sas` | DONE; vector assignments and Halton coordinates | complete |
+| 5 | `faure.m` | `faure.sas` | DONE; vectorized Pascal construction, digits, and weighted evaluation | complete |
+| 6 | `cbe.m` | `cbe.sas` | DONE; vectorized scalar/vector digit conversion | complete |
+| 7 | `sobmat.m` | `sobmat.sas` | DONE; packed generating matrices and coefficient-shape fix | complete |
+| 8 | `sobol.m` | `sobol.sas` | DONE; vectorized binary digits and weighted evaluation | complete |
+| 9 | `korobov.m` | `korobov.sas` | Draft lattice algorithm unchanged | TO DO: REVIEW SAS program and tests |
+| 10 | `extkorobov.m` | `extkorobov.sas` | Draft lattice algorithm unchanged; uses the revised VDC | TO DO: REVIEW SAS program and tests |
+
+## Recent Updates (2026-11-24)
+
+- Reviewed the current sources against the previous documentation commit
+  `53ad794` (2026-11-06) and implementation commit `b0f880d` (2026-11-24).
+  The earlier VDC, Halton, and Hammersley work is recorded in commits
+  `02c4da7` and `4610bbe`. The lattice algorithms remain draft work; argument
+  renaming and formatting changes are not treated as algorithm revisions.
+- `cbe` now accepts a scalar or vector, normalizes it with `colvec`, and uses
+  positional powers, broadcast division, `floor`, and `mod` to extract all
+  digits together. Results have one row per value, padded on the left with
+  zeros. It obtains digit counts from `numDigBase` and returns missing if that
+  result is missing. Tests now include binary and ternary batches.
+- `faure` constructs the lower-triangular Pascal transform with row/column
+  index matrices and a mask. Base-b digits are extracted in bulk, and a column
+  weight vector replaces repeated weights and weighted temporary matrices.
+  The genuine recurrence across coordinates remains.
+- `sobol` similarly constructs its binary digit matrix with broadcast division
+  and evaluates each direction block using a weight column vector. The short
+  coordinate loop remains; the per-digit construction loop is gone.
+- `sobmat` retains the XOR recurrence and flattened block layout. The crucial
+  row-preserving coefficient selection is documented under the IML indexing
+  rule above. Tests cover identity and single-digit blocks, recurrences beyond
+  eight digits, and the twentieth coordinate.
+- Sobol tests cover source-ordered points, prefixes across digit lengths,
+  one-dimensional balance, a recurrence point beyond eight digits, and a
+  16-point dyadic grid balance check.
+- The old `vdc_orig`, `faure_orig`, `sobol_orig`, and `cbe_orig` versions are
+  commented reference code, not active definitions or stored comparison
+  modules. `nbe` is no longer a dependency of the active sequence pipeline.
+- `tests/test_discrepancy.sas` provides an L2-star discrepancy diagnostic for
+  Halton and Sobol, including comparisons with a Monte Carlo baseline. It is
+  not included by `test_all.sas`; its integration and execution status are
+  marked REVIEW below.
+
+## Earlier Updates (2026-10-30)
 
 - Added leading comments to all ten translated SAS files describing each
   function's purpose, input requirements, and output dimensions and ordering.
@@ -63,7 +129,7 @@ library before running that test.
   shapes, rounding, input preservation, digit validity, and round trips.
 - Vectorized `vdc` by converting the full index column to a digit matrix,
   applying reversed-power weights, and summing weighted rows. The former
-  point-by-point implementation remains in the same file as `vdc_orig`.
+  point-by-point implementation remains as commented `vdc_orig` reference code.
 - Added `FirstPrimes(n)`, which returns an `n` by 1 column vector containing
   the first `n` primes from a fixed lookup table, for integer `1 <= n <= 1000`.
   Inputs outside that range return scalar missing (`.`). The helper is included
@@ -102,121 +168,111 @@ the existing Sobol tables still support only 20 dimensions.
   base from 2 through 16 with their neighboring integers. The `EXACTINT` and
   `EXACTINT-1` examples now assert rejection rather than successful conversion.
 
-## Vectorization Opportunities
+## Vectorization Status
 
-The revised `vdc` is the model: operate on all point indices together, reuse a
-digit matrix, align positional weights instead of reversing digit columns, and
-reduce weighted rows. The following opportunities were identified by scanning
-the remaining IML implementations. They are proposals, not implemented or
-benchmarked changes.
+The shared approach is now implemented in several routines: build digits for
+all points together, align positional powers or transform indexing, and use
+matrix operations rather than per-point or per-digit loops. Completion here
+describes the code, not a measured performance guarantee.
 
-| Functions | Candidate improvement and constraints |
-| --- | --- |
-| `convertFromBase10`, `cbe` | Form a matrix or row of quotients using positional powers, then apply `floor` and `mod` to extract all digits together. This can replace the remaining per-digit loops. `convertFromBase10` already processes all input values together; its remaining loop is over digit positions, not points. Preserve leading-zero padding, the zero case, and the numeric-range policy when reusing the newer helper. |
-| `faure` | Build digits for `T(0:numPoints)` with the bulk conversion helper instead of repeated division of trailing submatrices. Align the helper's most-significant-first columns with the transform's least-significant-first convention by changing the transform indexing. Replace repeated weight matrices and elementwise weighted sums with a single weight vector and matrix-vector products. The Pascal matrix can also be filled in batches over its valid triangular entries; retain the genuine recurrence across coordinates. |
-| `sobol` | Reuse one bulk binary digit matrix and align its ordering with the corresponding columns of each direction block before multiplication. Replace replicated weights and weighted temporary matrices with matrix-vector products. Coordinate blocks are independent and could be combined into a larger blocked calculation, but retaining the short coordinate loop may use less memory. Preserve ordinary binary-index order and the `numPoints+1` rows. |
-| `sobmat` | Batch conversion of the completed direction numbers to binary, replacing the final loop that calls `cbe` once per column. Align bits to each column's own digit position before packing the square blocks. The direction-number XOR recurrence depends on earlier values and is not removed by the `vdc` technique; verify intermediate direction numbers fit the helper's cutoff before reusing it. |
-| `korobov`, `extkorobov` | Replace the two `repeat` matrices with outer products: `T(1:numPoints) * generator` for Korobov and `sequence * generator` for extended Korobov, retaining the existing normalization and `mod`. This primarily removes temporary arrays because point evaluation is already vectorized. Keep the modular generator recurrence; replacing it with unrestricted multiplier powers risks overflow or precision loss. `extkorobov` also inherits the faster `vdc`. |
-| `nbe` | Locate the rightmost digit below `base-1`, increment it, and zero the trailing slice instead of propagating carry one position at a time. Handle all-maximal-digit overflow and empty trailing slices explicitly. Keep the operation on digit vectors rather than converting them to a potentially oversized numeric scalar. |
-| `halton` | Immediately benefits from the vectorized `vdc`. Its remaining loop is over bases, not points. A shared digit-position calculation across bases is possible, but different bases need different digit widths; retain the small coordinate loop unless profiling justifies the larger batched representation. |
-| `hammersley` | Already uses vector assignments and inherits improvements through `halton`. There is no local point loop to remove. Preserve the shifted Halton rows and the unused final base. |
-| `logbase`, `numDigBase`, `convertToBase10` | Already use array operations, indexed assignments, and row reductions. No comparable loop-removal opportunity was found. `convertToBase10` could use a matrix-vector product instead of forming the weighted digit matrix before summing rows. |
-| `FirstPrimes` | Already uses a lookup table and vector subscripting to select the first `n` primes. No prime-generation loop or comparable vectorization work is needed. |
+| Functions | Implemented | Remaining Opportunity |
+| --- | --- | --- |
+| `cbe` | Batch digit extraction with broadcast positional powers | Optional consolidation with the older conversion helper, preserving rounding and range behavior |
+| `vdc` | Bulk digit matrix and reversed-power weights; no point loop or digit-column reversal | Optional matrix-vector weighted sum instead of the weighted temporary matrix |
+| `faure`, `sobol` | Bulk digits and weight-column matrix products; Faure's Pascal construction is also vectorized | Coordinate loops remain intentionally; consider blocks only if profiling justifies them |
+| `sobmat` | Uses vectorized `cbe`; coefficient orientation corrected | The final packing loop could batch conversions and align bits per column; keep the dependent XOR recurrence |
+| `halton`, `hammersley` | Inherit vectorized VDC; Hammersley already uses vector assignments | Halton retains a small loop over bases; no local Hammersley point loop remains |
+| `convertFromBase10` | Vectorized over input values | Its loop over digit positions remains; preserve its rounding contract if replacing it with `cbe` |
+| `logbase`, `numDigBase`, `convertToBase10` | Array operations, indexed assignments, and row reductions | A matrix-vector product could avoid the weighted temporary in `convertToBase10` |
+| `FirstPrimes`, `nbe` | Prime lookup is already vectorized; `nbe` is unused by active sequences | No current optimization priority for the legacy carry loop |
+| `korobov`, `extkorobov` | Existing point evaluation is vectorized | Replace replicated matrices with outer products after reviewing the lattice routines; retain modular generator recurrence |
 
-Before implementing these candidates:
-
-- Load `convertbase.sas` for the new `vdc` dependencies and `nbe.sas` when
-  comparing against `vdc_orig`. The source defines both versions, but its
-  current `store` statement stores only `vdc`.
-- Compare results at a single point and at point counts just below, equal to,
-  and just above base powers. Preserve digit order, output shape, zero rows,
-  and the source-specific ordering documented below.
-- Check missing returns from bounded helpers before subsequent matrix
-  operations. The numeric cutoff is not a memory budget: full digit matrices
-  and combined coordinate blocks can be large. Benchmark time and peak memory;
-  use blocks of points where needed rather than requiring full materialization.
+Future changes should preserve single-point behavior, base-power boundaries,
+digit orientation, output shape, and source-specific ordering. Benchmark time
+and memory: the numeric cutoff is not a memory budget, and complete digit or
+multi-coordinate temporary matrices can be large. Block points where needed.
 
 ## Validation and Attention Items
 
-- SAS execution is not configured in VS Code. Checks here are static checks and
-  independent reference arithmetic. User-confirmed SAS results are recorded in
-  the progress table (`nbe` is confirmed); the remaining SAS runs are pending.
-- `vdc_orig` seeds its digit vector with zero, avoiding the earlier empty-seed
-  dependency on `nbe`. IML null matrices still need special handling before
-  copying them.
+- SAS execution is not configured in VS Code. The progress table records the user's
+  successful SAS checks of the modified functions as of 2026-11-24.
 - `vdc` uses `convertFromBase10` for all indices at once and weights
   `base##(-(numDigits:1))` for a row-wise weighted sum. This removes its
-  point loop and avoids reversing digit columns. `vdc_orig` retains the
-  previous point loop and column reversal for comparison. Both return zero
-  immediately for a single point.
+  point loop and avoids reversing digit columns. The active implementation
+  returns zero immediately for a single point.
 - The MATLAB `hammersley` source shifts the Halton coordinates down one row and
   does not use the last supplied base. Preserve this convention in the draft;
   decide later whether to use the usual unshifted Hammersley construction.
-- The MATLAB `faure` source returns `N+1` points, indexed from zero through `N`.
-  Preserve that count rather than silently changing the argument's meaning.
-- `faure` uses `repeat` for `repmat`, `comb` for `nchoosek`, and row-sum
-  subscripting for `sum(...,2)`. The original matrix and loop operations remain.
+- `faure` returns `numPts+1` points, indexed from zero through `numPts`.
+  Its digit matrix is least-significant-first, matched to a lower-triangular
+  Pascal transform. Its actual helper dependency is `numDigBase`.
 - `sobol` also returns `N+1` points in ordinary binary-index order, not Gray-code
   order. Request `N=2^m-1` to obtain a complete block of `2^m` points.
 - IML has no three-dimensional matrices. `sobmat(d,r)` therefore returns an
   `r` by `r*d` matrix of adjacent blocks. Dimension `k` occupies columns
   `(k-1)*r + (1:r)`; `sobol` reads that layout. This is the draft's one output
-  representation change from MATLAB.
+  representation change from MATLAB, also called a flattened matrix format.
 - The source Sobol table has 53 polynomials but only 20 rows of initial values;
   use dimensions 1 through 20. The tables are retained without replacement.
-- `sobmat` uses SAS `bxor` for MATLAB `bitxor` and explicitly allocates space for
-  direction-number recurrence beyond the eight supplied initial values. Confirm
-  SAS bit-width limits before extending the draft to very large digit counts.
-- `cbe` returns a zero digit explicitly for input zero, avoiding `log(0)`, and
-  uses a local remainder so IML's reference arguments do not modify the caller.
-  Tests include exact base-power boundaries and integer reconstruction.
+- `sobmat` uses SAS `bxor` for MATLAB `bitxor` and allocates space for recurrence
+  beyond the eight supplied initial values. Its header records unsigned
+  32-bit operands (`0..2^32-1`); the supported digit-count limit still needs
+  review in conjunction with `cbe`'s cutoff.
+- `cbe` converts scalar or vector inputs to a most-significant-first matrix
+  without modifying the caller. Zero requires one digit, and shorter values
+  are padded on the left. It depends on `numDigBase`, unlike the older scalar
+  remainder-based implementation.
 - `korobov` retains the source's row order `1:N`, so its origin is last.
   `extkorobov` uses base-2 van der Corput order, so its origin is first. Both
   retain generator construction modulo `N`; dyadic extension is tested.
-- The original ten draft translations still assume valid scalar sizes and
-  integer bases as in the MATLAB sources. The support utilities now enforce
-  the numeric cutoff above; broader input validation, generator selection,
-  and extreme-size robustness remain later package work.
+- The active dependency chains include `halton -> vdc -> convertFromBase10`,
+  `hammersley -> halton`, `faure -> numDigBase`, and
+  `sobol -> sobmat -> cbe -> numDigBase`; digit counts also use `logbase`.
+  `extkorobov` uses `vdc`. Load these actual dependencies rather than relying
+  only on older `Depends` header comments.
 - Use a prime base at least as large as the dimension for Faure and pairwise
   coprime bases for Halton. Point counts are positive integers; `cbe` accepts
   nonnegative integers. These mathematical prerequisites are not yet validated
   by the draft functions.
-- All MATLAB function calls used here have IML translations. No unresolved
-  calls require `/* RICK NEEDS TO CONVERT THIS FUNCTION */` markers in this pass.
+- All MATLAB function calls used here have IML translations. 
+
+### REVIEW Items
+
+- **REVIEW: Lattice validation.** `korobov` and `extkorobov` were not part of
+  the user's completed implementation pass. Their previous pending SAS status
+  remains unconfirmed, including compatibility with the current helper setup.
+- **REVIEW: Clean-session tests and dependency comments.** Establish the
+  compilation/load order for the aggregate and individual tests. 
+- **REVIEW: Supported numeric limits and missing propagation.** The helper
+  cutoff does not by itself validate every generator argument or intermediate
+  direction number. Confirm the maximum Sobol/Sobmat digit count with the
+  32-bit `bxor` range and `cbe`'s `1E9` bound. Confirm that generators stop
+  safely when a bounded helper returns missing, before allocation or subscripting.
+- **REVIEW: Discrepancy diagnostic status.** Confirm which cases in
+  `tests/test_discrepancy.sas` were run and whether it should remain a manual
+  diagnostic or join the suite. It assumes an existing IML session and loaded
+  modules and is not registered in `test_all.sas`. Empirical discrepancy
+  comparisons are diagnostics, not general integration-error guarantees.
 
 ## Checks Completed Here
 
-- Module definitions, `store` statements, and `DO`/`END` structure have been
-  checked statically for all ten translations.
-- Independent exact arithmetic verifies the expected sequence points, digit
-  expansions, packed Sobol matrix examples and recurrence values, and lattice
-  ordering and dyadic extension fixtures. This does not execute the IML code.
+- The 2026-11-24 documentation review read all eleven implementation files,
+  compared the relevant commits, and inspected the affected test setup and
+  newer fixtures. It did not rerun SAS or reproduce performance measurements.
+- Earlier static checks covered module definitions, `store` statements, and
+  `DO`/`END` structure for the ten translations. Earlier independent arithmetic
+  checked sequence points, digit expansions, packed Sobol matrix examples and
+  recurrences, and lattice ordering and dyadic extension fixtures. Those checks
+  do not replace the user's later SAS runs or validate every revised code path.
 - The bounded logarithmic digit-count reference check covered 42,080 small,
   cutoff, and base-power cases across bases 2 through 541. It modeled SAS
   `CEIL`'s `1E-12` near-integer tolerance; this was not SAS execution or a proof
   for every supported input. Cutoff digit fixtures and `EXACTINT` rejection
   expectations were also checked independently.
-- All ten sources have corresponding standalone tests. The suite preserves the
-  requested order, with the support-utility test appended, and all suite and
-  dependency include paths resolve.
+- All ten translated sources have corresponding test files. The aggregate
+  retains the original include order and appends the support-utility test;
+  clean-session dependency loading remains REVIEW rather than assumed complete.
 - The copied Sobol tables match all 53 polynomial values and all 160 initial
   values in the MATLAB source.
-- No untranslated MATLAB calls remain. Static structure and editor diagnostic
-  checks pass; whitespace is checked separately from runtime correctness.
-- The remaining SAS tests, including the new `vdc` comparison, still need to
-  run in the user's configured SAS/IML environment. Apart from the user-confirmed
-  `nbe` result in the progress table, no successful IML execution is claimed.
-
-### Resolved Reference-Check Error
-
-The earlier statement "an extra hand-written reference matrix had an incorrect
-row" referred to a temporary expected matrix in a Python reference check. For
-the second Sobol dimension with nine binary digits, the fourth row of that
-hand-entered 9-by-9 direction matrix was `000111100`; the correct row is
-`000100010`.
-
-The auxiliary expectation was replaced by binomial-coefficient parity:
-$V_{ij} = \binom{j-1}{i-1} \bmod 2$ for $i \le j$, and zero otherwise, using
-one-based indices. The revised reference check passed. No MATLAB source, IML
-module, or SAS test fixture needed changing because of this error. This was not
-a SAS test run; execution of the SAS test suite remains pending.
+- The user reports successful SAS validation of the modified functions.
+  Only the unresolved items labeled REVIEW above remain uncertain.

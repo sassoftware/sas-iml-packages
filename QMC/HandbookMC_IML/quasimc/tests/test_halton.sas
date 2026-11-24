@@ -1,11 +1,9 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/nbe.sas";
-%include "QMC/HandbookMC_IML/quasimc/vdc.sas";
-%include "QMC/HandbookMC_IML/quasimc/halton.sas";
-
-proc iml;
-load module=_all_;
+%include "check_test.sas";
+%include "../convertbase.sas";
+%include "../nbe.sas";
+%include "../vdc.sas";
+%include "../halton.sas";
 
 bases = {2 3 5};
 points = halton(bases, 5);

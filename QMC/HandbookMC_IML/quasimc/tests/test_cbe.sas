@@ -1,6 +1,7 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/cbe.sas";
+%include "check_test.sas";
+%include "../convertbase.sas";
+%include "../cbe.sas";
 
 actual = cbe(0, 2);
 correct = {0};

@@ -1,6 +1,6 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/convertbase.sas";
+%include "check_test.sas";
+%include "../convertbase.sas";
 
 exampleValues = {2, 3, 4, 5, 8, 9, 15, 16, 48};
 originalValues = exampleValues;

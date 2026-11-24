@@ -1,7 +1,8 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/nbe.sas";
-%include "QMC/HandbookMC_IML/quasimc/vdc.sas";
+%include "check_test.sas";
+%include "../convertbase.sas";
+%include "../vdc.sas";
+
 
 actual = vdc(2, 9);
 correct = {0, 8, 4, 12, 2, 10, 6, 14, 1} / 16;

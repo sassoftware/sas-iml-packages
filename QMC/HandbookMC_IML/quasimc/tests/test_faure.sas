@@ -1,6 +1,7 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/faure.sas";
+%include "check_test.sas";
+%include "../convertbase.sas";
+%include "../faure.sas";
 
 actual = faure(2, 2, 7);
 correct = {0 0,

@@ -6,7 +6,7 @@
       numPts - Positive integer final sequence index, not the row count.
    Output: (numPts+1) x dim matrix in [0,1), containing sequence
            indices 0 through numPts, including the initial all-zero row.
-   Depends: NONE
+   Depends: numDigBase
 */
 /* vectorized version */
 start faure(base, dim, numPts);

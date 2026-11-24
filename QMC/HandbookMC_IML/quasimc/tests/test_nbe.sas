@@ -1,6 +1,6 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/nbe.sas";
+%include "check_test.sas";
+%include "../nbe.sas";
 
 digits = {0};
 actual = nbe(digits, 2);

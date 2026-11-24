@@ -1,7 +1,8 @@
 proc iml;
-%include "QMC/HandbookMC_IML/quasimc/tests/check_test.sas";
-%include "QMC/HandbookMC_IML/quasimc/cbe.sas";
-%include "QMC/HandbookMC_IML/quasimc/sobmat.sas";
+%include "check_test.sas";
+%include "../convertbase.sas";
+%include "../cbe.sas";
+%include "../sobmat.sas";
 
 matrices = sobmat(3, 3);
 correct = {1 0 0 1 1 1 1 0 1,

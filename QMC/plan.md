@@ -79,21 +79,23 @@ industry standards first.
 Your goal here is to deliver a functional, correct subsystem that covers 90% of
 practical use cases.
 
-**Sequences:**
+**1.1 Sequences:**
 
-- **Sobol:** The undisputed workhorse of QMC. You must include this. Use the Joe
-	and Kuo direction numbers (up to 21,201 dimensions).
-- **Halton:** Computationally simple to implement using prime bases. Excellent
+- **Sobol:** DONE The undisputed workhorse of QMC. You must include this. 
+- **Halton:** DONE Computationally simple to implement using prime bases. Excellent
 	for lower dimensions ($d < 20$) and a great baseline for testing your
 	architecture.
+- **Faure:** DONE Mostly used for academic work in low dimensions.
+- **Extended Sobol:** Use the Joe and Kuo direction numbers to extend the 
+    computation to up to 21,201 dimensions!
 
-**Randomization (RQMC):**
+**1.2 Randomization (RQMC):**
 
 - **Random Shift (Cranley-Patterson Rotation):** $y = (x+u) \bmod 1$, where
 	$u \sim U(0,1)^d$. It is trivial to implement and works perfectly for lattice
 	rules and Halton sequences (though less optimal for Sobol).
 
-**Integration (`QMCQUAD`):**
+**1.3 Integration (`QMCQUAD`):**
 
 - **Basic hypercube transformation:** Map $[0,1]^d$ to $[L,U]$.
 - Provide the point estimate.
@@ -104,20 +106,20 @@ Standard QMC cannot easily provide a standard error (SE). Randomized QMC solves
 this by creating $m$ independent randomizations of the $n$-length sequence,
 yielding $m$ independent integral estimates.
 
-**Sequences:**
+**2.1 Sequences:**
 
 - **Rank-1 Lattices (Korobov):** Include a pre-computed table of good generator
 	vectors (e.g., from L'Ecuyer or Nuyens). They are exceptionally good for
 	periodic functions.
 
-**Randomization:**
+**2.2 Randomization:**
 
 - **Digital Scrambling (Linear Matrix Scrambling):** Random shifts break the net
 	properties of digital sequences like Sobol. You need a base-2 scrambling method
 	(like Owen's or Matoušek's affine scrambling) to properly randomize Sobol nets
 	while preserving their low-discrepancy properties.
 
-**Integration (`QMCQUAD`):**
+**2.3 Integration (`QMCQUAD`):**
 
 - **Standard Error:** Update the function to accept $m$ replications. Compute the
 	integral for each of the $m$ randomized batches, return the mean of the $m$
@@ -126,10 +128,10 @@ yielding $m$ independent integral estimates.
 
 #### Stage 3: Advanced Options (Nice-to-Haves)
 
-**Sequences:** Niederreiter, Faure (often requested by academics, but rarely
+**3.1 Sequences:** Niederreiter, Faure (often requested by academics, but rarely
 outperform optimally scrambled Sobol in practice).
 
-**Integration:**
+**3.2 Integration:**
 
 - **Adaptive Stopping:** Instead of fixed $n$, allow the user to specify an
 	absolute or relative tolerance. The routine doubles the number of points (for
