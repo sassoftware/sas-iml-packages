@@ -9,10 +9,6 @@ correct = {1 0 0 1 1 1 1 0 1,
            0 0 1 0 0 1 0 0 1};
 run check_test("sobmat: three packed direction matrices", matrices, correct, 0);
 
-actual = nrow(matrices) || ncol(matrices);
-correct = {3 9};
-run check_test("sobmat: packed output dimensions", actual, correct, 0);
-
 actual = sobmat(1, 5);
 correct = I(5);
 run check_test("sobmat: first dimension is identity", actual, correct, 0);

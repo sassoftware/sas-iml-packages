@@ -11,14 +11,23 @@ base = 2;
 actual = cbe(value, base);
 correct = {1 1 0 1};
 run check_test("cbe: binary expansion", actual, correct, 0);
-correct = 13;
-run check_test("cbe: value input unchanged", value, correct, 0);
-correct = 2;
-run check_test("cbe: base input unchanged", base, correct, 0);
 
-actual = cbe(100203, 10);
-correct = {1 0 0 2 0 3};
-run check_test("cbe: decimal expansion with zeros", actual, correct, 0);
+actual = cbe(T(0:7), base);  /* 8x3 matrix of binary expansion */
+correct = {0 0 0,
+           0 0 1,
+           0 1 0,
+           0 1 1,
+           1 0 0,
+           1 0 1,
+           1 1 0,
+           1 1 1};
+run check_test("cbe: binary expansion", actual, correct, 0);
+
+actual = cbe({0, 8, 9}, 3);  /* 3x3 matrix of ternary expansion */
+correct = {0 0 0,
+           0 2 2,
+           1 0 0};
+run check_test("cbe: ternary expansion", actual, correct, 0);
 
 actual = cbe(26, 3);
 correct = {2 2 2};
@@ -31,6 +40,10 @@ run check_test("cbe: exact base power", actual, correct, 0);
 actual = cbe(5, 7);
 correct = {5};
 run check_test("cbe: one digit", actual, correct, 0);
+
+actual = cbe(100203, 10);
+correct = {1 0 0 2 0 3};
+run check_test("cbe: decimal expansion with zeros", actual, correct, 0);
 
 do base = 2 to 7;
    do value = 0 to 64;

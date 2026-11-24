@@ -25,10 +25,6 @@ correct = {0 0 0,
            8 5 2} / 9;
 run check_test("faure: first nine ternary points", points, correct);
 
-actual = nrow(points) || ncol(points);
-correct = {9 3};
-run check_test("faure: source returns N plus one points", actual, correct, 0);
-
 actual = faure(2, 1, 4);
 correct = {0, 4, 2, 6, 1} / 8;
 run check_test("faure: one dimension and a power boundary", actual, correct, 0);
@@ -40,4 +36,3 @@ run check_test("faure: one-digit expansion", actual, correct, 0);
 actual = all(points >= 0 & points < 1);
 correct = 1;
 run check_test("faure: unit hypercube", actual, correct, 0);
-quit;

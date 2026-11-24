@@ -14,3 +14,4 @@ start check_test(test_name, computed, correct, tol=1E-12);
       print msg[L=""], maxDiff computed correct;
    end;
 finish;
+store module=(check_test);

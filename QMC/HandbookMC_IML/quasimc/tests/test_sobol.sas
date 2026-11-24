@@ -43,7 +43,13 @@ actual = longPoints[257, ];
 correct = {1 257 465} / 512;
 run check_test("sobol: direction recurrence beyond eight digits", actual, correct, 0);
 
-actual = all(longPoints >= 0 & longPoints < 1);
-correct = 1;
-run check_test("sobol: unit hypercube", actual, correct, 0);
+/* Test 8: 2D (0, 4, 2)-net balance on a 4 x 4 dyadic grid for N = 16 points */
+pts16 = sobol(3, 15);
+cellX = floor(4 * pts16[ , 1]); /* 0..3 */
+cellY = floor(4 * pts16[ , 2]); /* 0..3 */
+actual = 4 * cellX + cellY;     /* Unique cell index in 0..15 */
+call sort(actual, 1);
+correct = T(0:15);
+run check_test("sobol: 2D (0,4,2)-net 4x4 grid balance", actual, correct, 0);
+
 quit;

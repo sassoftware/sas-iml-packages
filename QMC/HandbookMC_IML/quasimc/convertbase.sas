@@ -1,5 +1,6 @@
 /* Utility functions to represent an integer in various bases b >= 2.
    https://blogs.sas.com/content/iml/2025/11/03/convert-integers-bases.html
+   Depends: NONE
 */
 
 /* Compute LOG_b(x) for a vector of x values and for an integer base, b > 0.

@@ -36,11 +36,11 @@ library before running that test.
 
 | Order | MATLAB Source | IML Module | Status |
 | --- | --- | --- | --- |
-| 1 | `nbe.m` | `nbe.sas` | Translated; tests written, SAS execution complete |
-| 2 | `vdc.m` | `vdc.sas` | Vectorized; `vdc_orig` retained for comparison, SAS execution complete |
-| 3 | `halton.m` | `halton.sas` | Translated; tests written, SAS execution pending |
-| 4 | `hammersley.m` | `hammersley.sas` | Translated; tests written, SAS execution pending |
-| 5 | `faure.m` | `faure.sas` | Translated; tests written, SAS execution pending |
+| 1 | `nbe.m` | `nbe.sas` | Translated; tests written, SAS execution complete | NOT USED
+| 2 | `vdc.m` | `vdc.sas` | Vectorized; `vdc_orig` retained for comparison, SAS execution complete | DONE
+| 3 | `halton.m` | `halton.sas` | Translated; tests written, SAS execution complete | DONE
+| 4 | `hammersley.m` | `hammersley.sas` | Translated; tests written, SAS execution complete | DONE
+| 5 | `faure.m` | `faure.sas` | Translated; tests written, SAS execution completed | DONE
 | 6 | `sobol.m` | `sobol.sas` | Translated; tests written, SAS execution pending |
 | 7 | `sobmat.m` | `sobmat.sas` | Translated; tests written, SAS execution pending |
 | 8 | `cbe.m` | `cbe.sas` | Translated; tests written, SAS execution pending |
