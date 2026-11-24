@@ -1,0 +1,11 @@
+%include "test_nbe.sas";
+%include "test_vdc.sas";
+%include "test_halton.sas";
+%include "test_hammersley.sas";
+%include "test_faure.sas";
+%include "test_sobol.sas";
+%include "test_sobmat.sas";
+%include "test_cbe.sas";
+%include "test_korobov.sas";
+%include "test_extkorobov.sas";
+%include "test_convertbase.sas";
