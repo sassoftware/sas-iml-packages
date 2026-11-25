@@ -1,6 +1,6 @@
 /* Utility functions to represent an integer in various bases b >= 2.
    https://blogs.sas.com/content/iml/2025/11/03/convert-integers-bases.html
-   Depends: NONE
+   Depends: cbe() for convertFromBase10()
 */
 
 /* Compute LOG_b(x) for a vector of x values and for an integer base, b > 0.
@@ -54,15 +54,7 @@ start convertFromBase10(x, base);
    safe_cutoff = 1E9;
    if any(x > safe_cutoff) then return(.);
    n = round(x);     /* ensure inputs are integers */
-   numDig = numDigBase(max(n), base);
-   /* For an explanation, see https://blogs.sas.com/content/iml/2015/08/31/digits-in-integer.html */
-   c = j(nrow(n), numDig, 0);
-   do i = 1 to numDig;
-      a = mod(n, base);
-      n = floor( n/base );
-      c[ , numDig - i + 1] = a;
-   end;
-   return c;
+   return(cbe(n, base));
 finish;
 
 /* Convert a row vector from any base to a number in base 10.

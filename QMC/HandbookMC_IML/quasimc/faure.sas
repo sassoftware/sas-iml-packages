@@ -6,24 +6,31 @@
       numPts - Positive integer final sequence index, not the row count.
    Output: (numPts+1) x dim matrix in [0,1), containing sequence
            indices 0 through numPts, including the initial all-zero row.
-   Depends: numDigBase
+   Depends: cbe()
 */
 /* vectorized version */
 start faure(base, dim, numPts);
-   numDigits = numDigBase(numPts, base);
-   /* 1. Lower-triangular Pascal matrix mod base */
+   /* 1. Base-b digit matrix.
+      cbe() puts the most significant coefficients on the left, unlike the
+      least-significant-first internal digits in the MATLAB faure() from
+      the Handbook of Monte Carlo Methods. The Pascal transform and weights
+      below are reordered to preserve the Handbook's sequence points.
+   */
+   digits = cbe(T(0:numPts), base);
+   if cmiss(digits[1]) then return(.);
+   numDigits = ncol(digits);
+
+   /* 2. Pascal transform aligned with cbe column order */
    idx = j(numDigits, numDigits);
    r = row(idx);
    c = col(idx);
    lowerMask = (r >= c);
    transform = lowerMask # mod(comb(r - 1, lowerMask # (c - 1)), base);
-
-   /* 2. Base-b digit matrix  */
-   y = floor(repeat(T(0:numPts), 1, numDigits) / (base ## (0:(numDigits - 1))));
-   digits = mod(y, base);
+   reverse = numDigits:1;
+   transform = transform[reverse, reverse];
 
    /* 3. Column vector of weights */
-   weights = T(1 / (base ## (1:numDigits)));
+   weights = T(1 / (base ## (numDigits:1)));
 
    points = j(numPts + 1, dim, 0);
    points[ , 1] = digits * weights;
