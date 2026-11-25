@@ -15,16 +15,21 @@
       numPts - Positive integer final sequence index, not the row count.
    Output: (numPts+1) x dim matrix in [0,1), containing sequence
            indices 0 through numPts, including the initial all-zero row.
-   Depends: numDigBase, sobmat
+   Depends: cbe(), sobmat()
 */
 start sobol(dim, numPts);
    base = 2;
-   numDigits = numDigBase(numPts, base);
 
-   /* 1. Base-2 digit matrix (replaces digitIdx loop via broadcasting) */
-   RowMat = repeat(T(0:numPts), 1, numDigits);
-   y = floor( RowMat / base##(0:(numDigits - 1)) );
-   digits = mod(y, base);
+   /* 1. Base-2 digit matrix.
+      cbe() puts the most significant coefficients on the left, unlike the
+      least-significant-first internal digits in the MATLAB sobol() from
+      the Handbook of Monte Carlo Methods. Direction-block input columns
+      below are reordered; output weights and sequence points are unchanged.
+   */
+   digits = cbe(T(0:numPts), base);
+   if cmiss(digits[1]) then return(.);
+   numDigits = ncol(digits);
+   reverse = numDigits:1;
 
    /* 2. Column vector of weights (replaces repeat, elementwise #, and [, +]) */
    weights = base ## -T(1:numDigits);
@@ -35,6 +40,7 @@ start sobol(dim, numPts);
    do dimIdx = 1 to dim;
       columns = (dimIdx - 1) * numDigits + (1:numDigits);
       directions = matrixBlocks[ , columns];
+      directions = directions[ , reverse];
       points[ , dimIdx] = mod(digits * T(directions), base) * weights;
    end;
    return(points);

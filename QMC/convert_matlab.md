@@ -42,11 +42,11 @@ directory, for example `../convertbase.sas`. Run the aggregate test file with:
 %include "test_all.sas";
 ```
 
-No package installation is required. The eight sequence/conversion tests that
-depend on helpers from `convertbase.sas` now include that file explicitly before
-their dependent module definitions. Halton and Hammersley still load stored
-modules; the broader clean-session setup remains under REVIEW below. The source
-files and `check_test.sas` store their modules in the current IML storage library.
+No package installation is required. Tests that depend on digit expansion now
+include `../convertbase.sas` and then `../cbe.sas` before their dependent module
+definitions. Halton and Hammersley still load stored modules; the broader
+clean-session setup remains under REVIEW below. The source files and
+`check_test.sas` store their modules in the current IML storage library.
 
 Successful `check_test` assertions are silent; failures print
 `--- test name --- FAILS ---`, the maximum difference, and the computed and
@@ -54,16 +54,17 @@ expected results. Expected missing returns are tested through missing-value
 masks because the helper treats a missing computed value as failure.
 
 **REVIEW:** Confirm a reproducible clean-session setup and dependency order for
-`test_all.sas`. It currently includes `test_convertbase.sas` last, although
-earlier tests require its utility modules. Individual successful runs do not
-establish that the unchanged aggregate file works in a fresh session.
+`test_all.sas` without relying on previously stored modules. The user reports
+that the suite passes against the refactored files; whether that run began in
+a fresh session remains unconfirmed.
 
 ## Progress
 
-Status reconciled on **2026-11-24** from all eleven SAS implementation files,
-the commit history, and the user's report that the relevant tests for the
-modified functions have been run successfully in SAS. These are user-confirmed
-runs, not SAS executions performed by the assistant in VS Code.
+Implementation status was reconciled on **2026-11-24** from all eleven SAS
+files and the commit history. Validation was updated on **2026-11-25** after
+the user ran the test suite against the refactored files and reported that
+all tests pass. These are user-confirmed SAS runs, not executions performed
+by the assistant in VS Code. The table now includes post-refactor validation.
 
 | Order | MATLAB Source | IML Module | Current State | SAS Validation |
 | --- | --- | --- | --- | --- |
@@ -76,8 +77,34 @@ runs, not SAS executions performed by the assistant in VS Code.
 | 6 | `cbe.m` | `cbe.sas` | DONE; vectorized scalar/vector digit conversion | complete |
 | 7 | `sobmat.m` | `sobmat.sas` | DONE; packed generating matrices and coefficient-shape fix | complete |
 | 8 | `sobol.m` | `sobol.sas` | DONE; vectorized binary digits and weighted evaluation | complete |
-| 9 | `korobov.m` | `korobov.sas` | Draft lattice algorithm unchanged | TO DO: REVIEW SAS program and tests |
-| 10 | `extkorobov.m` | `extkorobov.sas` | Draft lattice algorithm unchanged; uses the revised VDC | TO DO: REVIEW SAS program and tests |
+| 9 | `korobov.m` | `korobov.sas` | Draft lattice algorithm unchanged; program REVIEW remains | complete; suite passes |
+| 10 | `extkorobov.m` | `extkorobov.sas` | Draft lattice algorithm unchanged; program REVIEW remains | complete; suite passes |
+
+## Refactoring Update (2026-11-25)
+
+- On branch `refactor`, `cbe` is now the single active implementation of
+  nonnegative-integer base-b expansion. Its most-significant-first output and
+  leading-zero padding are unchanged; commented `_orig` functions are untouched.
+- `convertFromBase10` delegates to `cbe` after its existing raw-input cutoff
+  check and rounding. VDC calls `cbe` directly, checks the scalar missing return,
+  and obtains the width from `ncol(digits)` instead of recalculating it.
+- Faure and Sobol also call `cbe` and derive their widths from the digit matrix.
+  Faure reverses the rows and columns of its small Pascal transform and reverses
+  its weight order. Sobol reverses the input columns of each direction block,
+  leaving the output weights unchanged. Neither reverses the large digit matrix;
+  point ordering and coordinate recurrences are preserved.
+- Added `../cbe.sas` to the six test entry points that newly require it.
+  Existing test cases and the tests-directory working convention are unchanged.
+- Independent exact-arithmetic checks matched VDC fixtures and converter
+  rounding cases, Faure old/new outputs and ternary fixtures, and Sobol old/new
+  outputs through 20 dimensions and nine digits, including the recurrence
+  fixture. Static checks confirmed one active expansion implementation and
+  resolved all 58 test include paths. These reference/static checks did not
+  execute SAS.
+- The user subsequently ran the test suite against the refactored SAS files
+  on 2026-11-25 and reported that all tests pass. Post-refactor SAS validation
+  is complete for the suite; the remaining REVIEW items are separate from
+  that successful run.
 
 ## Recent Updates (2026-11-24)
 
@@ -177,12 +204,12 @@ describes the code, not a measured performance guarantee.
 
 | Functions | Implemented | Remaining Opportunity |
 | --- | --- | --- |
-| `cbe` | Batch digit extraction with broadcast positional powers | Optional consolidation with the older conversion helper, preserving rounding and range behavior |
-| `vdc` | Bulk digit matrix and reversed-power weights; no point loop or digit-column reversal | Optional matrix-vector weighted sum instead of the weighted temporary matrix |
-| `faure`, `sobol` | Bulk digits and weight-column matrix products; Faure's Pascal construction is also vectorized | Coordinate loops remain intentionally; consider blocks only if profiling justifies them |
+| `cbe` | Single source for batch digit extraction with broadcast positional powers | No duplicate active expansion remains |
+| `vdc` | CBE digit matrix and reversed-power weights; no point loop or digit-column reversal | Optional matrix-vector weighted sum instead of the weighted temporary matrix |
+| `faure`, `sobol` | CBE digit matrices and aligned transforms with weight-column matrix products | Coordinate loops remain intentionally; consider blocks only if profiling justifies them |
 | `sobmat` | Uses vectorized `cbe`; coefficient orientation corrected | The final packing loop could batch conversions and align bits per column; keep the dependent XOR recurrence |
 | `halton`, `hammersley` | Inherit vectorized VDC; Hammersley already uses vector assignments | Halton retains a small loop over bases; no local Hammersley point loop remains |
-| `convertFromBase10` | Vectorized over input values | Its loop over digit positions remains; preserve its rounding contract if replacing it with `cbe` |
+| `convertFromBase10` | Rounding and cutoff compatibility wrapper around `cbe` | No separate digit-expansion loop remains |
 | `logbase`, `numDigBase`, `convertToBase10` | Array operations, indexed assignments, and row reductions | A matrix-vector product could avoid the weighted temporary in `convertToBase10` |
 | `FirstPrimes`, `nbe` | Prime lookup is already vectorized; `nbe` is unused by active sequences | No current optimization priority for the legacy carry loop |
 | `korobov`, `extkorobov` | Existing point evaluation is vectorized | Replace replicated matrices with outer products after reviewing the lattice routines; retain modular generator recurrence |
@@ -196,7 +223,7 @@ multi-coordinate temporary matrices can be large. Block points where needed.
 
 - SAS execution is not configured in VS Code. The progress table records the user's
   successful SAS checks of the modified functions as of 2026-11-24.
-- `vdc` uses `convertFromBase10` for all indices at once and weights
+- `vdc` uses `cbe` for all indices at once and weights
   `base##(-(numDigits:1))` for a row-wise weighted sum. This removes its
   point loop and avoids reversing digit columns. The active implementation
   returns zero immediately for a single point.
@@ -204,10 +231,11 @@ multi-coordinate temporary matrices can be large. Block points where needed.
   does not use the last supplied base. Preserve this convention in the draft;
   decide later whether to use the usual unshifted Hammersley construction.
 - `faure` returns `numPts+1` points, indexed from zero through `numPts`.
-  Its digit matrix is least-significant-first, matched to a lower-triangular
-  Pascal transform. Its actual helper dependency is `numDigBase`.
+  Its digit matrix is most-significant-first from `cbe`, matched to a Pascal
+  transform with reversed row/column order and reversed positional weights.
 - `sobol` also returns `N+1` points in ordinary binary-index order, not Gray-code
-  order. Request `N=2^m-1` to obtain a complete block of `2^m` points.
+  order. Its CBE digit columns are aligned with reversed input columns of each
+  direction block. Request `N=2^m-1` to obtain a complete block of `2^m` points.
 - IML has no three-dimensional matrices. `sobmat(d,r)` therefore returns an
   `r` by `r*d` matrix of adjacent blocks. Dimension `k` occupies columns
   `(k-1)*r + (1:r)`; `sobol` reads that layout. This is the draft's one output
@@ -225,24 +253,26 @@ multi-coordinate temporary matrices can be large. Block points where needed.
 - `korobov` retains the source's row order `1:N`, so its origin is last.
   `extkorobov` uses base-2 van der Corput order, so its origin is first. Both
   retain generator construction modulo `N`; dyadic extension is tested.
-- The active dependency chains include `halton -> vdc -> convertFromBase10`,
-  `hammersley -> halton`, `faure -> numDigBase`, and
-  `sobol -> sobmat -> cbe -> numDigBase`; digit counts also use `logbase`.
-  `extkorobov` uses `vdc`. Load these actual dependencies rather than relying
-  only on older `Depends` header comments.
+- The active dependency chains include `halton -> vdc -> cbe`,
+  `hammersley -> halton`, `faure -> cbe`, and both `sobol -> cbe` and
+  `sobol -> sobmat -> cbe`. The compatibility path is
+  `convertFromBase10 -> cbe -> numDigBase -> logbase`.
+  `extkorobov` uses `vdc`. Load the utility modules and `cbe` before executing
+  dependent routines; `cbe` does not call the compatibility converter.
 - Use a prime base at least as large as the dimension for Faure and pairwise
   coprime bases for Halton. Point counts are positive integers; `cbe` accepts
   nonnegative integers. These mathematical prerequisites are not yet validated
   by the draft functions.
-- All MATLAB function calls used here have IML translations. 
+- All MATLAB function calls used here have IML translations.
 
 ### REVIEW Items
 
-- **REVIEW: Lattice validation.** `korobov` and `extkorobov` were not part of
-  the user's completed implementation pass. Their previous pending SAS status
-  remains unconfirmed, including compatibility with the current helper setup.
+- **REVIEW: Lattice algorithms.** `korobov` and `extkorobov` remain draft
+  implementations outside the completed refactoring pass. Their suite tests
+  now pass with the revised helper setup; substantive algorithm and generator
+  selection review remains future work.
 - **REVIEW: Clean-session tests and dependency comments.** Establish the
-  compilation/load order for the aggregate and individual tests. 
+  compilation/load order for the aggregate and individual tests.
 - **REVIEW: Supported numeric limits and missing propagation.** The helper
   cutoff does not by itself validate every generator argument or intermediate
   direction number. Confirm the maximum Sobol/Sobmat digit count with the
@@ -271,8 +301,10 @@ multi-coordinate temporary matrices can be large. Block points where needed.
   expectations were also checked independently.
 - All ten translated sources have corresponding test files. The aggregate
   retains the original include order and appends the support-utility test;
-  clean-session dependency loading remains REVIEW rather than assumed complete.
+  the user reports that the suite passes. Clean-session dependency loading
+  remains REVIEW rather than assumed complete.
 - The copied Sobol tables match all 53 polynomial values and all 160 initial
   values in the MATLAB source.
-- The user reports successful SAS validation of the modified functions.
-  Only the unresolved items labeled REVIEW above remain uncertain.
+- The user reports that all suite tests pass against the 2026-11-25 refactored
+  SAS files. Post-refactor manual SAS validation is complete; only the separate
+  unresolved REVIEW items remain open.

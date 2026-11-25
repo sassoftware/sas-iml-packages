@@ -1,6 +1,7 @@
 proc iml;
 %include "check_test.sas";
 %include "../convertbase.sas";
+%include "../cbe.sas";
 %include "../faure.sas";
 
 actual = faure(2, 2, 7);

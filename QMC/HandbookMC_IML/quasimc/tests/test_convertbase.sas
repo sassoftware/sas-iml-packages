@@ -1,6 +1,7 @@
 proc iml;
 %include "check_test.sas";
 %include "../convertbase.sas";
+%include "../cbe.sas";
 
 exampleValues = {2, 3, 4, 5, 8, 9, 15, 16, 48};
 originalValues = exampleValues;

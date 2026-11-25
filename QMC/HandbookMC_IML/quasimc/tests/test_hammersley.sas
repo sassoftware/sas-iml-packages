@@ -1,7 +1,7 @@
 proc iml;
 %include "check_test.sas";
 %include "../convertbase.sas";
-%include "../nbe.sas";
+%include "../cbe.sas";
 %include "../vdc.sas";
 %include "../halton.sas";
 %include "../hammersley.sas";

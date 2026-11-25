@@ -1,4 +1,3 @@
-%include "test_nbe.sas";
 %include "test_vdc.sas";
 %include "test_halton.sas";
 %include "test_hammersley.sas";

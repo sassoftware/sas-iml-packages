@@ -1,6 +1,7 @@
 proc iml;
 %include "check_test.sas";
 %include "../convertbase.sas";
+%include "../cbe.sas";
 %include "../vdc.sas";
 
 
